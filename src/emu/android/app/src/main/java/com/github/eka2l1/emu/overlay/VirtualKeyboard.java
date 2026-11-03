@@ -68,6 +68,8 @@ public class VirtualKeyboard implements Overlay, Runnable {
         private int corners = 0;
         private Drawable icon;
         private int iconColor;
+        /** NGStation: label colour used instead of the foreground when not pressed (0 = none). */
+        private int accentColor;
 
         VirtualKey(int keyCode, String label) {
             this.keyCode = keyCode;
@@ -97,6 +99,10 @@ public class VirtualKeyboard implements Overlay, Runnable {
 
         void setSelected(boolean flag) {
             selected = flag;
+        }
+
+        void setAccentColor(int color) {
+            accentColor = color;
         }
 
         public void setVisible(boolean flag) {
@@ -129,6 +135,9 @@ public class VirtualKeyboard implements Overlay, Runnable {
             } else {
                 bgColor = colors[BACKGROUND];
                 fgColor = colors[FOREGROUND];
+                if (accentColor != 0) {
+                    fgColor = (fgColor & 0xFF000000) | (accentColor & 0x00FFFFFF);
+                }
             }
             int olColor = colors[OUTLINE];
             if (opaque) {
@@ -220,7 +229,9 @@ public class VirtualKeyboard implements Overlay, Runnable {
     private static final int LAYOUT_OLD_VERSION = 1;
     private static final int LAYOUT_VERSION = 2;
 
-    private static final int NUM_VARIANTS = 4;
+    private static final int NUM_VARIANTS = 5;
+    /** NGStation: the N-Gage style layout, used by default. */
+    public static final int NGAGE_VARIANT = 4;
 
     public static final int LAYOUT_EOF = -1;
     public static final int LAYOUT_KEYS = 0;
@@ -340,13 +351,15 @@ public class VirtualKeyboard implements Overlay, Runnable {
 
     protected LayoutListener listener;
 
+    private static final int NGAGE_RED = 0xE01B22;
+    private final Paint decorPaint = new Paint();
     private Paint drawPaint = new Paint();
     private Paint fillPaint = new Paint();
     private Paint textPaint = new Paint();
     private float textCenterOffset;
 
     public VirtualKeyboard(Context context) {
-        this(context, 1);
+        this(context, NGAGE_VARIANT);
     }
 
     public VirtualKeyboard(Context context, int variant) {
@@ -378,7 +391,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
         keypad[KEY_DOWN] = new VirtualKey(Keycode.KEY_DOWN, ARROW_DOWN);
         keypad[KEY_DOWN_RIGHT] = new VirtualKey(Keycode.KEY_DOWN, Keycode.KEY_RIGHT, ARROW_DOWN_RIGHT);
 
-        keypad[KEY_FIRE] = new VirtualKey(Keycode.KEY_FIRE, "F");
+        keypad[KEY_FIRE] = new VirtualKey(Keycode.KEY_FIRE, "OK");
 
         keypad[KEY_CALL] = new VirtualKey(Keycode.KEY_CALL, "Call");
         keypad[KEY_CALL].setIcon(AppCompatResources.getDrawable(context, R.drawable.ic_vk_call), 0x34C759);
@@ -386,6 +399,11 @@ public class VirtualKeyboard implements Overlay, Runnable {
         keypad[KEY_END].setIcon(AppCompatResources.getDrawable(context, R.drawable.ic_vk_call_end), 0xFF3B30);
         keypad[KEY_EDIT] = new VirtualKey(Keycode.KEY_EDIT, context.getString(R.string.virtual_key_edit));
         keypad[KEY_EDIT].setIcon(AppCompatResources.getDrawable(context, R.drawable.ic_vk_edit), 0);
+        // NGStation: 5 and 7 are the N-Gage's main game buttons; mark them in red.
+        keypad[KEY_NUM5].setAccentColor(NGAGE_RED);
+        keypad[KEY_NUM7].setAccentColor(NGAGE_RED);
+        decorPaint.setStyle(Paint.Style.FILL);
+        decorPaint.setAntiAlias(true);
 
         snapOrigins = new int[keypad.length];
         snapModes = new int[keypad.length];
@@ -556,6 +574,55 @@ public class VirtualKeyboard implements Overlay, Runnable {
                 }
                 resetOptionalKeys();
                 break;
+            case NGAGE_VARIANT:
+                // Held sideways like an N-Gage: game screen in the middle, an 8-way pad with
+                // the OK key on the left, the 3x4 keypad on the right, soft keys on top and
+                // the green/red keys at the bottom.
+                keyScales[SCALE_JOYSTICK] = 1;
+                keyScales[SCALE_SOFT_KEYS] = 0.8f;
+                keyScales[SCALE_DIAL_KEYS] = 0.8f;
+                keyScales[SCALE_DIGITS] = 0.75f;
+                keyScales[SCALE_FIRE_KEY] = 1;
+
+                setSnap(KEY_LEFT, SCREEN, RectSnap.ALIGN_VCENTER | RectSnap.ALIGN_LEFT);
+                setSnap(KEY_FIRE, KEY_LEFT, RectSnap.EXT_EAST);
+                setSnap(KEY_RIGHT, KEY_FIRE, RectSnap.EXT_EAST);
+                setSnap(KEY_UP, KEY_FIRE, RectSnap.EXT_NORTH);
+                setSnap(KEY_DOWN, KEY_FIRE, RectSnap.EXT_SOUTH);
+                setSnap(KEY_UP_LEFT, KEY_LEFT, RectSnap.EXT_NORTH);
+                setSnap(KEY_UP_RIGHT, KEY_RIGHT, RectSnap.EXT_NORTH);
+                setSnap(KEY_DOWN_LEFT, KEY_LEFT, RectSnap.EXT_SOUTH);
+                setSnap(KEY_DOWN_RIGHT, KEY_RIGHT, RectSnap.EXT_SOUTH);
+
+                setSnap(KEY_NUM9, SCREEN, RectSnap.ALIGN_RIGHT | RectSnap.BOTTOM_VCENTER);
+                setSnap(KEY_NUM8, KEY_NUM9, RectSnap.EXT_WEST);
+                setSnap(KEY_NUM7, KEY_NUM8, RectSnap.EXT_WEST);
+                setSnap(KEY_NUM6, KEY_NUM9, RectSnap.EXT_NORTH);
+                setSnap(KEY_NUM5, KEY_NUM6, RectSnap.EXT_WEST);
+                setSnap(KEY_NUM4, KEY_NUM5, RectSnap.EXT_WEST);
+                setSnap(KEY_NUM3, KEY_NUM6, RectSnap.EXT_NORTH);
+                setSnap(KEY_NUM2, KEY_NUM3, RectSnap.EXT_WEST);
+                setSnap(KEY_NUM1, KEY_NUM2, RectSnap.EXT_WEST);
+                setSnap(KEY_POUND, KEY_NUM9, RectSnap.EXT_SOUTH);
+                setSnap(KEY_NUM0, KEY_POUND, RectSnap.EXT_WEST);
+                setSnap(KEY_STAR, KEY_NUM0, RectSnap.EXT_WEST);
+                setSnap(KEY_DIAL, KEY_NUM1, RectSnap.EXT_NORTH);
+                setSnap(KEY_CANCEL, KEY_NUM3, RectSnap.EXT_NORTH);
+
+                for (int i = KEY_NUM1; i < KEYBOARD_SIZE; i++) {
+                    keypad[i].setVisible(true);
+                }
+                keypad[KEY_DIAL].setVisible(false);
+                keypad[KEY_CANCEL].setVisible(false);
+                resetOptionalKeys();
+
+                setSnap(KEY_SOFT_LEFT, SCREEN, RectSnap.INT_NORTHWEST);
+                setSnap(KEY_SOFT_RIGHT, SCREEN, RectSnap.INT_NORTHEAST);
+                setSnap(KEY_CALL, SCREEN, RectSnap.INT_SOUTHWEST);
+                setSnap(KEY_END, SCREEN, RectSnap.INT_SOUTHEAST);
+                keypad[KEY_CALL].setVisible(true);
+                keypad[KEY_END].setVisible(true);
+                break;
         }
     }
 
@@ -577,6 +644,9 @@ public class VirtualKeyboard implements Overlay, Runnable {
         String[] names = new String[num];
         for (int i = 0; i < num; i++) {
             names[i] = String.valueOf(i + 1);
+        }
+        if (num > NGAGE_VARIANT) {
+            names[NGAGE_VARIANT] = "N-Gage";
         }
         return names;
     }
@@ -873,12 +943,63 @@ public class VirtualKeyboard implements Overlay, Runnable {
 
     public void paint(Canvas canvas) {
         if (visible) {
+            paintNGageDecor(canvas);
             for (VirtualKey key : keypad) {
                 if (key.visible) {
                     key.paint(canvas);
                 }
             }
         }
+    }
+
+    private static final int[] DPAD_KEYS = {KEY_UP_LEFT, KEY_UP, KEY_UP_RIGHT, KEY_LEFT, KEY_FIRE,
+            KEY_RIGHT, KEY_DOWN_LEFT, KEY_DOWN, KEY_DOWN_RIGHT};
+    private static final int[] DIGIT_KEYS = {KEY_NUM1, KEY_NUM2, KEY_NUM3, KEY_NUM4, KEY_NUM5, KEY_NUM6,
+            KEY_NUM7, KEY_NUM8, KEY_NUM9, KEY_STAR, KEY_NUM0, KEY_POUND};
+
+    /**
+     * NGStation: a dark disc behind the pad and a dark plate behind the keypad, so the
+     * controls read like the N-Gage's face. Skipped when the keys sit on top of the game
+     * picture, or once the keys have been spread apart in the layout editor.
+     */
+    private void paintNGageDecor(Canvas canvas) {
+        if (obscuresVirtualScreen || keySize <= 0) {
+            return;
+        }
+        RectF pad = unionOf(DPAD_KEYS);
+        if (pad != null && pad.width() <= keySize * 3.6f && pad.height() <= keySize * 3.6f) {
+            float radius = Math.max(pad.width(), pad.height()) * 0.62f;
+            decorPaint.setColor(0xFF1A1A1A);
+            canvas.drawCircle(pad.centerX(), pad.centerY(), radius, decorPaint);
+            decorPaint.setColor(0xFF2A0D0E);
+            canvas.drawCircle(pad.centerX(), pad.centerY(), radius * 0.92f, decorPaint);
+            decorPaint.setColor(0xFF121212);
+            canvas.drawCircle(pad.centerX(), pad.centerY(), radius * 0.86f, decorPaint);
+        }
+        RectF digits = unionOf(DIGIT_KEYS);
+        if (digits != null && digits.width() <= keySize * 3.2f && digits.height() <= keySize * 4.2f) {
+            float inset = keySize * 0.12f;
+            RectF plate = new RectF(digits.left - inset, digits.top - inset,
+                    digits.right + inset, digits.bottom + inset);
+            decorPaint.setColor(0xFF161616);
+            canvas.drawRoundRect(plate, keySize * 0.3f, keySize * 0.3f, decorPaint);
+        }
+    }
+
+    private RectF unionOf(int[] keys) {
+        RectF union = null;
+        for (int k : keys) {
+            if (!keypad[k].isVisible()) {
+                return null;
+            }
+            RectF r = keypad[k].getRect();
+            if (union == null) {
+                union = new RectF(r);
+            } else {
+                union.union(r);
+            }
+        }
+        return union;
     }
 
     protected void repaint() {

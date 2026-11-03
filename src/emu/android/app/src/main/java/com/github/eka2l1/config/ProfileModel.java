@@ -117,11 +117,13 @@ public class ProfileModel {
         this.dir = dir;
         this.isNew = true;
         version = 1;
-        screenBackgroundColor = 0xD0D0D0;
+        // NGStation defaults: black surround, game centred, held sideways like an N-Gage.
+        screenBackgroundColor = 0x000000;
         screenBackgroundImageOpacity = 50;
         screenBackgroundImageKeepAspectRatio = true;
         screenScaleType = 1;
-        screenGravity = 1;
+        screenGravity = 2;
+        orientation = 3;
         screenScaleRatio = 100;
         screenShowNotch = false;
 
@@ -131,10 +133,11 @@ public class ProfileModel {
         vkButtonShape = VirtualKeyboard.ROUND_RECT_SHAPE;
         vkAlpha = 64;
 
-        vkBgColor = 0xD0D0D0;
-        vkFgColor = 0x000080;
-        vkBgColorSelected = 0x000080;
+        // Dark keys with white labels, red when pressed.
+        vkBgColor = 0x262626;
+        vkFgColor = 0xF2F2F2;
+        vkBgColorSelected = 0xE01B22;
         vkFgColorSelected = 0xFFFFFF;
-        vkOutlineColor = 0xFFFFFF;
+        vkOutlineColor = 0x4A4A4A;
     }
 }

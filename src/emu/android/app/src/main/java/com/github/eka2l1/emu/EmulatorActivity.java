@@ -65,6 +65,7 @@ import com.github.eka2l1.config.ProfilesManager;
 import com.github.eka2l1.emu.overlay.FixedKeyboard;
 import com.github.eka2l1.emu.overlay.OverlayView;
 import com.github.eka2l1.emu.overlay.VirtualKeyboard;
+import com.github.eka2l1.ngage.GameLoadingOverlay;
 import com.github.eka2l1.settings.AppDataStore;
 import com.github.eka2l1.settings.KeyMapper;
 import com.github.eka2l1.util.LogUtils;
@@ -112,6 +113,7 @@ public class EmulatorActivity extends AppCompatActivity {
     private SparseIntArray androidToSymbian;
     private ProfileModel params;
     private MenuItem actionScreenshot;
+    private GameLoadingOverlay loadingOverlay;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -194,6 +196,8 @@ public class EmulatorActivity extends AppCompatActivity {
         surfaceView.setOnKeyListener(callbacks);
         surfaceView.getHolder().addCallback(callbacks);
         surfaceView.requestFocus();
+        // NGStation: black loading screen until the game draws its first real frame.
+        loadingOverlay = GameLoadingOverlay.show(this, surfaceView, name);
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -573,6 +577,9 @@ public class EmulatorActivity extends AppCompatActivity {
             if (!launched) {
                 Emulator.launchApp((int) uid);
                 launched = true;
+                if (loadingOverlay != null) {
+                    loadingOverlay.start();
+                }
             }
         }
 

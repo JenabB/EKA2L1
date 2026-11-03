@@ -71,6 +71,8 @@ public class SetupWizardFragment extends Fragment {
     private LinearLayout storageCard;
     private View content;
     private TextView loadingText;
+    private View loadingView;
+    private Button storageButton;
     private boolean nativeReady;
 
     private final ActivityResultLauncher<Void> firmwarePathPicker =
@@ -90,65 +92,82 @@ public class SetupWizardFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
         android.widget.FrameLayout frame = new android.widget.FrameLayout(ctx);
-        loadingText = Ui.text(ctx, "Menyiapkan emulator…", 16, false);
+        Ui.setBlackBackground(frame);
+
+        LinearLayout loading = Ui.column(ctx);
+        loading.setGravity(android.view.Gravity.CENTER);
+        android.widget.ProgressBar spinner = new android.widget.ProgressBar(ctx);
+        spinner.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.RED));
+        loading.addView(spinner);
+        loadingText = Ui.muted(ctx, "Menyiapkan emulator…", 15);
         loadingText.setGravity(android.view.Gravity.CENTER);
-        frame.addView(loadingText, new android.widget.FrameLayout.LayoutParams(
+        loadingText.setPadding(0, Ui.dp(ctx, 12), 0, 0);
+        loading.addView(loadingText);
+        loadingView = loading;
+        frame.addView(loading, new android.widget.FrameLayout.LayoutParams(
                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+
         ScrollView scroll = new ScrollView(ctx);
         scroll.setFillViewport(true);
         scroll.setVisibility(View.GONE);
         content = scroll;
         frame.addView(scroll);
         LinearLayout root = Ui.column(ctx);
-        int pad = Ui.dp(ctx, 16);
+        int pad = Ui.dp(ctx, 18);
         root.setPadding(pad, pad, pad, pad);
         scroll.addView(root);
 
-        root.addView(Ui.text(ctx, "Selamat datang di NGStation", 22, true));
-        TextView intro = Ui.text(ctx, "Tiga langkah sekali saja, setelah itu tinggal pilih game dan main.", 14, false);
-        intro.setPadding(0, Ui.dp(ctx, 4), 0, Ui.dp(ctx, 16));
+        TextView brand = Ui.text(ctx, Ui.brand(), 30, true);
+        brand.setLetterSpacing(0.12f);
+        root.addView(brand);
+        TextView intro = Ui.muted(ctx, "Tiga langkah sekali saja, setelah itu tinggal pilih game dan main.", 14);
+        intro.setPadding(0, Ui.dp(ctx, 4), 0, Ui.dp(ctx, 18));
         root.addView(intro);
 
         // Step 1: storage access (Android 11+ only).
         storageCard = Ui.card(ctx);
-        storageCard.addView(Ui.text(ctx, "1. Izin akses file", 17, true));
-        storageCard.addView(Ui.text(ctx, "Supaya emulator bisa membaca folder game dan firmware langsung dari penyimpanan.", 14, false));
+        storageCard.addView(Ui.stepHeader(ctx, "1", "Izin akses file"));
+        storageCard.addView(Ui.muted(ctx, "Supaya emulator bisa membaca game dan firmware langsung dari "
+                + "penyimpanan, dan membuat folder Games/N-Gage otomatis.", 14));
         storageStatus = Ui.text(ctx, "", 14, true);
         storageCard.addView(storageStatus);
-        Button storageButton = Ui.button(ctx, "Beri izin akses semua file");
+        storageButton = Ui.button(ctx, "Beri izin akses semua file");
         storageButton.setOnClickListener(v -> openAllFilesAccessSettings());
         storageCard.addView(storageButton);
         root.addView(storageCard);
 
         // Step 2: firmware.
         LinearLayout firmwareCard = Ui.card(ctx);
-        firmwareCard.addView(Ui.text(ctx, "2. Firmware N-Gage", 17, true));
-        firmwareCard.addView(Ui.text(ctx,
-                "Pilih folder firmware N-Gage: folder paket \"Data\" (berisi devices.yml, drives, roms), "
-                        + "atau folder berisi file .ROM + .RPKG / .VPL. Bisa juga langsung file .ZIP paketnya.", 14, false));
+        firmwareCard.addView(Ui.stepHeader(ctx, "2", "Firmware N-Gage"));
+        firmwareCard.addView(Ui.muted(ctx,
+                "Pilih file .ZIP paket firmware, atau foldernya: folder \"Data\" (berisi devices.yml, "
+                        + "drives, roms), atau folder berisi .ROM + .RPKG / .VPL.", 14));
         firmwareStatus = Ui.text(ctx, "", 14, true);
         firmwareCard.addView(firmwareStatus);
-        Button firmwareButton = Ui.button(ctx, "Pilih folder firmware");
-        firmwareButton.setOnClickListener(v -> pickFirmware());
-        firmwareCard.addView(firmwareButton);
         Button zipButton = Ui.button(ctx, "Pilih file ZIP firmware");
         zipButton.setOnClickListener(v -> firmwareZipPicker.launch(new String[]{"application/zip"}));
         firmwareCard.addView(zipButton);
-        Button manualButton = Ui.button(ctx, "Pasang manual (layar perangkat EKA2L1)");
+        Button firmwareButton = Ui.secondaryButton(ctx, "Pilih folder firmware");
+        firmwareButton.setOnClickListener(v -> pickFirmware());
+        firmwareCard.addView(firmwareButton);
+        Button manualButton = Ui.secondaryButton(ctx, "Pasang manual (layar perangkat EKA2L1)");
         manualButton.setOnClickListener(v -> openDeviceManager());
         firmwareCard.addView(manualButton);
         root.addView(firmwareCard);
 
         // Step 3: games folder.
         LinearLayout gamesCard = Ui.card(ctx);
-        gamesCard.addView(Ui.text(ctx, "3. Folder game", 17, true));
-        gamesCard.addView(Ui.text(ctx,
-                "Pilih folder yang berisi game-game N-Gage. Tiap game satu folder "
-                        + "(berisi System/Apps), atau file .zip.", 14, false));
+        gamesCard.addView(Ui.stepHeader(ctx, "3", "Folder game"));
+        gamesCard.addView(Ui.muted(ctx,
+                "Default-nya folder Games/N-Gage di memori HP (dibuat otomatis). Taruh tiap game "
+                        + "sebagai satu folder (berisi System/Apps) atau file .zip di sana.", 14));
         gamesStatus = Ui.text(ctx, "", 14, true);
         gamesCard.addView(gamesStatus);
-        Button gamesButton = Ui.button(ctx, "Pilih folder game");
+        Button defaultButton = Ui.secondaryButton(ctx, "Pakai folder default (Games/N-Gage)");
+        defaultButton.setOnClickListener(v -> useDefaultGamesFolder(true));
+        gamesCard.addView(defaultButton);
+        Button gamesButton = Ui.secondaryButton(ctx, "Pilih folder lain");
         gamesButton.setOnClickListener(v -> pickGamesFolder());
         gamesCard.addView(gamesButton);
         root.addView(gamesCard);
@@ -163,11 +182,12 @@ public class SetupWizardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        ActionBar actionBar = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+        AppCompatActivity activity = (AppCompatActivity) requireActivity();
+        ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(false);
-            actionBar.setTitle("Setup NGStation");
         }
+        Ui.applyChrome(activity, actionBar, "Setup");
         if (nativeReady) {
             refresh();
             return;
@@ -180,7 +200,7 @@ public class SetupWizardFragment extends Fragment {
                     @Override
                     public void onSuccess(@NonNull Boolean deviceReady) {
                         nativeReady = true;
-                        loadingText.setVisibility(View.GONE);
+                        loadingView.setVisibility(View.GONE);
                         content.setVisibility(View.VISIBLE);
                         refresh();
                     }
@@ -208,8 +228,14 @@ public class SetupWizardFragment extends Fragment {
         storageCard.setVisibility(needsStoragePermission ? View.VISIBLE : View.GONE);
         if (FileUtils.hasDirectStorageAccess()) {
             setStatus(storageStatus, "✓ Izin sudah diberikan", Ui.OK);
+            storageButton.setVisibility(View.GONE);
+            // First time with storage access: create Games/N-Gage and use it.
+            if (NGageLibrary.getGamesDir(ctx) == null) {
+                useDefaultGamesFolder(false);
+            }
         } else {
             setStatus(storageStatus, "Belum diizinkan (disarankan; tanpa ini dipakai mode SAF yang lebih lambat)", Ui.MUTED);
+            storageButton.setVisibility(View.VISIBLE);
         }
 
         String[] devices = Emulator.getDevices();
@@ -230,10 +256,10 @@ public class SetupWizardFragment extends Fragment {
         finishButton.setEnabled(devices != null && devices.length > 0 && gamesDir != null);
     }
 
-    private static void setStatus(TextView view, String text, int color) {
+    private void setStatus(TextView view, String text, int color) {
         view.setText(text);
         view.setTextColor(color);
-        view.setPadding(0, 12, 0, 0);
+        view.setPadding(0, Ui.dp(requireContext(), 10), 0, 0);
     }
 
     static String displayPath(String path) {
@@ -468,6 +494,29 @@ public class SetupWizardFragment extends Fragment {
     }
 
     // -------------------------------------------------------------------- games
+
+    /** Creates Games/N-Gage in shared storage (needs direct storage access) and selects it. */
+    private void useDefaultGamesFolder(boolean userAsked) {
+        if (!FileUtils.hasDirectStorageAccess()) {
+            if (userAsked) {
+                showError("Folder default butuh izin akses semua file (langkah 1). "
+                        + "Tanpa izin itu, pakai \"Pilih folder lain\".");
+            }
+            return;
+        }
+        File dir = NGageLibrary.createDefaultGamesDir();
+        if (dir == null) {
+            if (userAsked) {
+                showError("Folder Games/N-Gage tidak bisa dibuat di penyimpanan ini.");
+            }
+            return;
+        }
+        NGageLibrary.setGamesDir(requireContext(), dir.getAbsolutePath());
+        if (userAsked) {
+            Toast.makeText(getContext(), "Folder siap: " + dir.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        }
+        refresh();
+    }
 
     private void pickGamesFolder() {
         if (FileUtils.hasDirectStorageAccess()) {

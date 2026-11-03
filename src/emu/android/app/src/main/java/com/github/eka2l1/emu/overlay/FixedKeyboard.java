@@ -46,7 +46,8 @@ public class FixedKeyboard extends VirtualKeyboard {
 	}
 
 	public FixedKeyboard(Context context) {
-		super(context);
+		// The base class now defaults to the N-Gage layout, which this keyboard does not have.
+		super(context, 1);
 	}
 
 	@Override

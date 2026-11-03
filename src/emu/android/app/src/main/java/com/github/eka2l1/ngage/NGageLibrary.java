@@ -76,6 +76,32 @@ public final class NGageLibrary {
         prefs(context).edit().remove(KEY_UID_PREFIX + gamePath).commit();
     }
 
+    /**
+     * Creates Games/N-Gage in shared storage, with a short note on how to lay games out.
+     * Returns null when the folder cannot be created (no direct storage access).
+     */
+    public static File createDefaultGamesDir() {
+        File dir = new File(android.os.Environment.getExternalStorageDirectory(), "Games/N-Gage");
+        if (!dir.isDirectory() && !dir.mkdirs()) {
+            return null;
+        }
+        File note = new File(dir, "BACA SAYA.txt");
+        if (!note.exists()) {
+            String text = "NGStation - folder game N-Gage\n\n"
+                    + "Taruh tiap game di sini sebagai satu folder (isinya System/Apps/...)\n"
+                    + "atau sebagai file .zip. Contoh:\n\n"
+                    + "  Games/N-Gage/Asphalt Urban GT/System/Apps/Asphalt/...\n"
+                    + "  Games/N-Gage/Rayman 3.zip\n\n"
+                    + "Lalu buka NGStation; game langsung muncul di library.\n";
+            try (java.io.Writer w = new java.io.OutputStreamWriter(
+                    new java.io.FileOutputStream(note), java.nio.charset.StandardCharsets.UTF_8)) {
+                w.write(text);
+            } catch (java.io.IOException ignored) {
+            }
+        }
+        return dir;
+    }
+
     // ------------------------------------------------------------ pending launch
 
     /** Remembers the game to launch once the process has restarted after install. */

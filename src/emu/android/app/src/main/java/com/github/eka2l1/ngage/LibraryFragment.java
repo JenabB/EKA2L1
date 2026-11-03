@@ -107,14 +107,18 @@ public class LibraryFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
         FrameLayout frame = new FrameLayout(ctx);
+        Ui.setBlackBackground(frame);
 
         LinearLayout root = Ui.column(ctx);
         int pad = Ui.dp(ctx, 12);
         root.setPadding(pad, pad, pad, 0);
 
-        headerText = Ui.text(ctx, "", 13, false);
-        headerText.setTextColor(Ui.MUTED);
-        headerText.setPadding(Ui.dp(ctx, 4), 0, 0, Ui.dp(ctx, 8));
+        TextView brand = Ui.text(ctx, Ui.brand(), 24, true);
+        brand.setLetterSpacing(0.12f);
+        brand.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 4), 0, 0);
+        root.addView(brand);
+        headerText = Ui.muted(ctx, "", 12);
+        headerText.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 2), 0, Ui.dp(ctx, 12));
         root.addView(headerText);
 
         grid = new GridView(ctx);
@@ -126,6 +130,7 @@ public class LibraryFragment extends Fragment {
         grid.setClipToPadding(false);
         grid.setPadding(0, 0, 0, Ui.dp(ctx, 24));
         adapter = new GameAdapter();
+        grid.setSelector(new android.graphics.drawable.ColorDrawable(0));
         grid.setAdapter(adapter);
         grid.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) ->
                 onGameClicked(games.get(position)));
@@ -138,10 +143,10 @@ public class LibraryFragment extends Fragment {
         emptyView.setGravity(Gravity.CENTER);
         int epad = Ui.dp(ctx, 32);
         emptyView.setPadding(epad, epad, epad, epad);
-        emptyText = Ui.text(ctx, "", 15, false);
+        emptyText = Ui.muted(ctx, "", 15);
         emptyText.setGravity(Gravity.CENTER);
         emptyView.addView(emptyText);
-        Button chooseButton = Ui.button(ctx, "Pilih folder game");
+        Button chooseButton = Ui.secondaryButton(ctx, "Pilih folder game lain");
         chooseButton.setOnClickListener(v -> pickGamesFolder());
         emptyView.addView(chooseButton);
         emptyView.setVisibility(View.GONE);
@@ -161,11 +166,12 @@ public class LibraryFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        ActionBar actionBar = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+        AppCompatActivity activity = (AppCompatActivity) requireActivity();
+        ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(false);
-            actionBar.setTitle("NGStation");
         }
+        Ui.applyChrome(activity, actionBar, "Library");
     }
 
     @Override
@@ -183,6 +189,12 @@ public class LibraryFragment extends Fragment {
 
     private void load() {
         Context app = requireContext().getApplicationContext();
+        if (NGageLibrary.getGamesDir(app) == null && FileUtils.hasDirectStorageAccess()) {
+            java.io.File def = NGageLibrary.createDefaultGamesDir();
+            if (def != null) {
+                NGageLibrary.setGamesDir(app, def.getAbsolutePath());
+            }
+        }
         String dir = NGageLibrary.getGamesDir(app);
         headerText.setText(dir == null ? "" : "Folder: " + SetupWizardFragment.displayPath(dir));
 
@@ -271,8 +283,9 @@ public class LibraryFragment extends Fragment {
         if (dir == null) {
             emptyText.setText("Belum ada folder game. Pilih folder yang berisi game N-Gage kamu.");
         } else {
-            emptyText.setText("Tidak ada game N-Gage di folder ini.\n\nTiap game harus berupa folder "
-                    + "berisi System/Apps, atau file .zip.");
+            emptyText.setText("Belum ada game di\n" + SetupWizardFragment.displayPath(dir)
+                    + "\n\nSalin game ke folder itu: tiap game satu folder (berisi System/Apps) "
+                    + "atau file .zip. Lalu pilih Muat ulang di menu.");
         }
     }
 
@@ -627,9 +640,9 @@ public class LibraryFragment extends Fragment {
                 tile.setGravity(Gravity.CENTER_HORIZONTAL);
                 int pad = Ui.dp(ctx, 10);
                 tile.setPadding(pad, pad, pad, pad);
-                android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-                bg.setCornerRadius(Ui.dp(ctx, 12));
-                bg.setColor(0x1A808080);
+                android.graphics.drawable.StateListDrawable bg = new android.graphics.drawable.StateListDrawable();
+                bg.addState(new int[]{android.R.attr.state_pressed}, Ui.rounded(ctx, 0xFF2A0A0B, Ui.RED, 14));
+                bg.addState(new int[]{}, Ui.rounded(ctx, Ui.SURFACE, Ui.BORDER, 14));
                 tile.setBackground(bg);
 
                 holder = new Holder();
@@ -663,11 +676,11 @@ public class LibraryFragment extends Fragment {
                 holder.icon.setImageResource(R.mipmap.ic_ducky_foreground);
             }
             if (game.isInstalled()) {
-                holder.status.setText("Siap main");
-                holder.status.setTextColor(Ui.OK);
+                holder.status.setText("▶ Siap main");
+                holder.status.setTextColor(Ui.SILVER);
             } else {
                 holder.status.setText(game.archive ? "ZIP · ketuk untuk pasang" : "Ketuk untuk pasang");
-                holder.status.setTextColor(Ui.ACCENT);
+                holder.status.setTextColor(Ui.RED);
             }
             return convertView;
         }
