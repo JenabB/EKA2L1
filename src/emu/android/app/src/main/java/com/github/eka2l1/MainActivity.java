@@ -36,9 +36,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.github.eka2l1.applist.AppsListFragment;
+import com.github.eka2l1.ngage.LibraryFragment;
+import com.github.eka2l1.ngage.NGageLibrary;
+import com.github.eka2l1.ngage.SetupWizardFragment;
 import com.github.eka2l1.base.BaseActivity;
 import com.github.eka2l1.emu.Emulator;
 import com.github.eka2l1.settings.AppDataStore;
@@ -100,9 +103,12 @@ public class MainActivity extends BaseActivity {
         if (fragmentManager.findFragmentById(R.id.container) != null) {
             return;
         }
-        AppsListFragment appsListFragment = new AppsListFragment();
+        // NGStation: the game library is the home screen; the first run goes through setup.
+        Fragment home = NGageLibrary.isSetupDone(this)
+                ? new LibraryFragment()
+                : new SetupWizardFragment();
         fragmentManager.beginTransaction()
-                .replace(R.id.container, appsListFragment).commitNowAllowingStateLoss();
+                .replace(R.id.container, home).commitNowAllowingStateLoss();
     }
 
     private void showOpenGLDialog() {

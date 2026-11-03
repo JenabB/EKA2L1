@@ -17,9 +17,8 @@
 
 name: C/C++ CI
 
+# NGStation fork: the upstream matrix only runs on demand; ngstation.yml builds the APK.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 concurrency:
