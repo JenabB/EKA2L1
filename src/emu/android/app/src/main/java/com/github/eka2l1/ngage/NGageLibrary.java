@@ -85,6 +85,7 @@ public final class NGageLibrary {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             return null;
         }
+        new File(dir, "Firmware").mkdirs();
         File note = new File(dir, "BACA SAYA.txt");
         if (!note.exists()) {
             String text = "NGStation - folder game N-Gage\n\n"
@@ -92,7 +93,9 @@ public final class NGageLibrary {
                     + "atau sebagai file .zip. Contoh:\n\n"
                     + "  Games/N-Gage/Asphalt Urban GT/System/Apps/Asphalt/...\n"
                     + "  Games/N-Gage/Rayman 3.zip\n\n"
-                    + "Lalu buka NGStation; game langsung muncul di library.\n";
+                    + "Lalu buka NGStation; game langsung muncul di library.\n\n"
+                    + "Firmware: taruh file .zip paket firmware di folder Firmware/\n"
+                    + "sebelum setup, nanti dipasang otomatis.\n";
             try (java.io.Writer w = new java.io.OutputStreamWriter(
                     new java.io.FileOutputStream(note), java.nio.charset.StandardCharsets.UTF_8)) {
                 w.write(text);
@@ -200,7 +203,7 @@ public final class NGageLibrary {
                         break;
                     }
                 }
-            } else if (isArchiveName(child.getName())) {
+            } else if (isArchiveName(child.getName()) && !FirmwarePack.isPackZip(child)) {
                 games.add(new NGageGame(stripExtension(child.getName()), null, child.getAbsolutePath(), true));
             }
         }

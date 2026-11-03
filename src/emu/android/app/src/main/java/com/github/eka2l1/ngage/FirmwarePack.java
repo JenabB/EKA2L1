@@ -105,6 +105,77 @@ final class FirmwarePack {
         return devices && drives;
     }
 
+    /** True when {@code zip} is an EKA2L1 firmware pack (it holds a devices.yml). */
+    static boolean isPackZip(File zip) {
+        if (!zip.isFile() || !zip.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".zip")) {
+            return false;
+        }
+        try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(zip)) {
+            java.util.Enumeration<? extends ZipEntry> entries = zf.entries();
+            while (entries.hasMoreElements()) {
+                String name = entries.nextElement().getName().replace('\\', '/');
+                int slash = name.lastIndexOf('/');
+                String base = slash >= 0 ? name.substring(slash + 1) : name;
+                if (base.equalsIgnoreCase(DEVICES_FILE) && name.split("/").length <= 3) {
+                    return true;
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return false;
+    }
+
+    /** Result of looking for firmware the user has already put on the phone. */
+    static final class Found {
+        final File packRoot;
+        final File zip;
+
+        Found(File packRoot, File zip) {
+            this.packRoot = packRoot;
+            this.zip = zip;
+        }
+
+        File location() {
+            return zip != null ? zip : packRoot;
+        }
+    }
+
+    /**
+     * Looks in the usual places (Games/N-Gage/Firmware, Games/N-Gage, Download) for a
+     * firmware pack folder or zip, so setup can install it without asking.
+     */
+    static Found findOnDevice() {
+        File storage = android.os.Environment.getExternalStorageDirectory();
+        File[] places = {
+                new File(storage, "Games/N-Gage/Firmware"),
+                new File(storage, "Games/N-Gage"),
+                new File(storage, "Download"),
+        };
+        for (File place : places) {
+            File[] children = place.listFiles();
+            if (children == null) {
+                continue;
+            }
+            if (isPackRoot(place)) {
+                return new Found(place, null);
+            }
+            for (File child : children) {
+                if (child.isDirectory()) {
+                    File root = findPackRoot(child);
+                    if (root != null && root.getAbsolutePath().startsWith(place.getAbsolutePath())) {
+                        return new Found(root, null);
+                    }
+                }
+            }
+            for (File child : children) {
+                if (isPackZip(child)) {
+                    return new Found(null, child);
+                }
+            }
+        }
+        return null;
+    }
+
     // ------------------------------------------------------------ installation
 
     /** Merges the pack at {@code packRoot} into {@code dataDir}. */
@@ -119,6 +190,16 @@ final class FirmwarePack {
         for (File child : children) {
             if (child.isFile() && child.getName().equalsIgnoreCase(DEVICES_FILE)) {
                 mergeDevices(child, new File(dataDir, DEVICES_FILE));
+            } else if (child.isDirectory() && child.getName().equalsIgnoreCase("roms")) {
+                // The core looks for roms/<lower-case firmware code>/SYM.ROM.
+                File romsOut = new File(dataDir, "roms");
+                File[] codes = child.listFiles();
+                if (codes != null) {
+                    for (File code : codes) {
+                        String name = code.isDirectory() ? code.getName().toLowerCase(java.util.Locale.ROOT) : code.getName();
+                        copyRecursive(code, new File(romsOut, name));
+                    }
+                }
             } else {
                 copyRecursive(child, new File(dataDir, normalizeTopName(child.getName())));
             }
@@ -139,13 +220,21 @@ final class FirmwarePack {
 
     /** Unpacks a zipped pack (as shared around for EKA2L1) and merges it into {@code dataDir}. */
     static void installFromZip(Context context, Uri zipUri, File dataDir) throws IOException {
+        InputStream input = context.getContentResolver().openInputStream(zipUri);
+        if (input == null) {
+            throw new IOException("File ZIP tidak bisa dibuka");
+        }
+        installFromZipStream(input, dataDir);
+    }
+
+    static void installFromZipFile(File zip, File dataDir) throws IOException {
+        installFromZipStream(new FileInputStream(zip), dataDir);
+    }
+
+    private static void installFromZipStream(InputStream input, File dataDir) throws IOException {
         File staging = new File(dataDir.getParentFile(), "ngstation_pack_tmp");
         FileUtils.deleteDirectory(staging);
         try {
-            InputStream input = context.getContentResolver().openInputStream(zipUri);
-            if (input == null) {
-                throw new IOException("File ZIP tidak bisa dibuka");
-            }
             unzip(input, staging);
             File root = findPackRootBelow(staging);
             if (root == null) {

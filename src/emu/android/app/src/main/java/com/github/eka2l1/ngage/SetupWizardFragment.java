@@ -74,6 +74,7 @@ public class SetupWizardFragment extends Fragment {
     private View loadingView;
     private Button storageButton;
     private boolean nativeReady;
+    private boolean autoFirmwareChecked;
 
     private final ActivityResultLauncher<Void> firmwarePathPicker =
             registerForActivityResult(new PickDirResultContract(), this::onFirmwareFolder);
@@ -141,8 +142,9 @@ public class SetupWizardFragment extends Fragment {
         LinearLayout firmwareCard = Ui.card(ctx);
         firmwareCard.addView(Ui.stepHeader(ctx, "2", "Firmware N-Gage"));
         firmwareCard.addView(Ui.muted(ctx,
-                "Pilih file .ZIP paket firmware, atau foldernya: folder \"Data\" (berisi devices.yml, "
-                        + "drives, roms), atau folder berisi .ROM + .RPKG / .VPL.", 14));
+                "Taruh file .ZIP paket firmware di folder Games/N-Gage/Firmware, lalu buka "
+                        + "aplikasi ini: firmware dipasang otomatis. Atau pilih manual di bawah "
+                        + "(file .ZIP, folder \"Data\", atau folder berisi .ROM + .RPKG / .VPL).", 14));
         firmwareStatus = Ui.text(ctx, "", 14, true);
         firmwareCard.addView(firmwareStatus);
         Button zipButton = Ui.button(ctx, "Pilih file ZIP firmware");
@@ -253,7 +255,11 @@ public class SetupWizardFragment extends Fragment {
             setStatus(gamesStatus, "Belum dipilih", Ui.MUTED);
         }
 
-        finishButton.setEnabled(devices != null && devices.length > 0 && gamesDir != null);
+        boolean hasDevice = devices != null && devices.length > 0;
+        finishButton.setEnabled(hasDevice && gamesDir != null);
+        if (!hasDevice) {
+            autoInstallFirmware();
+        }
     }
 
     private void setStatus(TextView view, String text, int color) {
@@ -385,31 +391,70 @@ public class SetupWizardFragment extends Fragment {
     }
 
     private void installPack(PackJob job) {
+        installPack(job, "Menyalin paket firmware… bisa makan waktu beberapa menit.");
+    }
+
+    private void installPack(PackJob job, String message) {
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
-        dialog.setMessage("Menyalin paket firmware… bisa makan waktu beberapa menit.");
+        dialog.setMessage(message);
         dialog.show();
 
-        disposables.add(Completable.fromAction(() -> {
-                    job.run();
-                    // Registers the devices from the freshly copied drives/z folders.
-                    Emulator.rescanDevices();
-                })
+        Context app = requireContext().getApplicationContext();
+        // Only files are copied here. The core reads devices.yml at start-up, so the new
+        // device is picked up by restarting; asking the half-started core to switch device
+        // from this thread is what used to crash the app.
+        disposables.add(Completable.fromAction(job::run)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(new DisposableCompletableObserver() {
                     @Override
                     public void onComplete() {
                         dialog.dismiss();
-                        Toast.makeText(getContext(), "Paket firmware terpasang", Toast.LENGTH_SHORT).show();
-                        refresh();
+                        Toast.makeText(app, "Firmware terpasang. Memuat ulang…", Toast.LENGTH_SHORT).show();
+                        AppUtils.restart(app);
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
                         dialog.dismiss();
                         showError("Gagal memasang paket firmware: " + e.getMessage());
+                    }
+                }));
+    }
+
+    /** First run with storage access and no device yet: install firmware found on the phone. */
+    private void autoInstallFirmware() {
+        if (autoFirmwareChecked || !FileUtils.hasDirectStorageAccess()) {
+            return;
+        }
+        autoFirmwareChecked = true;
+        disposables.add(Single.fromCallable(() -> {
+                    FirmwarePack.Found found = FirmwarePack.findOnDevice();
+                    return found == null ? new Object[0] : new Object[]{found};
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableSingleObserver<Object[]>() {
+                    @Override
+                    public void onSuccess(@NonNull Object[] result) {
+                        if (result.length == 0 || !isAdded()) {
+                            return;
+                        }
+                        FirmwarePack.Found found = (FirmwarePack.Found) result[0];
+                        String where = found.location().getAbsolutePath();
+                        if (found.zip != null) {
+                            installPack(() -> FirmwarePack.installFromZipFile(found.zip, dataDir()),
+                                    "Firmware ditemukan:\n" + where + "\n\nMemasang otomatis…");
+                        } else {
+                            installPack(() -> FirmwarePack.installFromFolder(found.packRoot, dataDir()),
+                                    "Firmware ditemukan:\n" + where + "\n\nMemasang otomatis…");
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
                     }
                 }));
     }
