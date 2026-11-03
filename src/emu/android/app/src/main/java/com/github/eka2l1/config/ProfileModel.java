@@ -117,8 +117,8 @@ public class ProfileModel {
         this.dir = dir;
         this.isNew = true;
         version = 1;
-        // NGStation defaults: black surround, game centred, held sideways like an N-Gage.
-        screenBackgroundColor = 0x000000;
+        // NGStation defaults: grey N-Gage QD body round the screen, game centred, held sideways.
+        screenBackgroundColor = 0x9C9EA1;
         screenBackgroundImageOpacity = 50;
         screenBackgroundImageKeepAspectRatio = true;
         screenScaleType = 1;

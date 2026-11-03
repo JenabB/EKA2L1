@@ -522,7 +522,72 @@ public class EmulatorActivity extends AppCompatActivity {
     private void updateScreenSize() {
         RectF screen = new RectF(0, 0, displayWidth, displayHeight);
         if (keyboard != null) {
-            keyboard.resize(screen, screen);
+            keyboard.resize(screen, computeGameRect(screen));
+        }
+    }
+
+    /**
+     * NGStation: where the core draws the guest screen inside the surface, mirroring
+     * launcher::draw (fit/none/stretch, scale ratio, gravity). The keyboard uses it to know
+     * which keys really cover the game; passing the whole surface made every key count as
+     * covering it, so keys were always drawn translucent.
+     */
+    private RectF computeGameRect(RectF surface) {
+        try {
+            float gw = 176, gh = 208;
+            int[] sizes = Emulator.getScreenModeSizes();
+            if (sizes != null && sizes.length >= 2 && sizes[0] > 0 && sizes[1] > 0) {
+                gw = sizes[0];
+                gh = sizes[1];
+            }
+            float sw = surface.width(), sh = surface.height();
+            float w, h;
+            switch (params.screenScaleType) {
+                case 0:
+                    w = gw;
+                    h = gh;
+                    break;
+                case 2:
+                    w = sw;
+                    h = sh;
+                    break;
+                default:
+                    w = sw;
+                    h = gh * sw / gw;
+                    if (h > sh) {
+                        h = sh;
+                        w = gw * sh / gh;
+                    }
+                    break;
+            }
+            w = w * params.screenScaleRatio / 100f;
+            h = h * params.screenScaleRatio / 100f;
+            float x, y;
+            switch (params.screenGravity) {
+                case 0:
+                    x = 0;
+                    y = (sh - h) / 2;
+                    break;
+                case 1:
+                    x = (sw - w) / 2;
+                    y = 0;
+                    break;
+                case 3:
+                    x = sw - w;
+                    y = (sh - h) / 2;
+                    break;
+                case 4:
+                    x = (sw - w) / 2;
+                    y = sh - h;
+                    break;
+                default:
+                    x = (sw - w) / 2;
+                    y = (sh - h) / 2;
+                    break;
+            }
+            return new RectF(surface.left + x, surface.top + y, surface.left + x + w, surface.top + y + h);
+        } catch (Throwable t) {
+            return surface;
         }
     }
 
