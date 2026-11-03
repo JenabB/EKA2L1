@@ -344,6 +344,20 @@ public class Emulator {
         });
     }
 
+    /**
+     * NGStation: starts the native core if that has not happened yet. Every other native
+     * call dereferences the core state, which only exists after this, even when it fails
+     * for lack of an installed device. Returns whether a device is ready to run.
+     */
+    public static synchronized boolean ensureNativeStarted() {
+        try {
+            checkInit();
+            return true;
+        } catch (IllegalStateException e) {
+            return false;
+        }
+    }
+
     private static void checkInit() {
         if (!init && load) {
             throw new IllegalStateException("Emulator is not initialized");

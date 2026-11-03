@@ -44,13 +44,17 @@ import com.github.eka2l1.util.AppUtils;
 import com.github.eka2l1.util.FileUtils;
 import com.github.eka2l1.util.PickDirResultContract;
 import com.github.eka2l1.util.SAFDirResultContract;
+import com.github.eka2l1.util.SAFFileResultContract;
 
 import java.io.File;
 import java.util.Locale;
 
+import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableCompletableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -65,11 +69,16 @@ public class SetupWizardFragment extends Fragment {
     private TextView gamesStatus;
     private Button finishButton;
     private LinearLayout storageCard;
+    private View content;
+    private TextView loadingText;
+    private boolean nativeReady;
 
     private final ActivityResultLauncher<Void> firmwarePathPicker =
             registerForActivityResult(new PickDirResultContract(), this::onFirmwareFolder);
     private final ActivityResultLauncher<Void> firmwareTreePicker =
             registerForActivityResult(new SAFDirResultContract(true), this::onFirmwareTree);
+    private final ActivityResultLauncher<String[]> firmwareZipPicker =
+            registerForActivityResult(new SAFFileResultContract(), this::onFirmwareZip);
     private final ActivityResultLauncher<Void> gamesPathPicker =
             registerForActivityResult(new PickDirResultContract(), this::onGamesFolder);
     private final ActivityResultLauncher<Void> gamesTreePicker =
@@ -80,8 +89,17 @@ public class SetupWizardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
+        android.widget.FrameLayout frame = new android.widget.FrameLayout(ctx);
+        loadingText = Ui.text(ctx, "Menyiapkan emulator…", 16, false);
+        loadingText.setGravity(android.view.Gravity.CENTER);
+        frame.addView(loadingText, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
         ScrollView scroll = new ScrollView(ctx);
         scroll.setFillViewport(true);
+        scroll.setVisibility(View.GONE);
+        content = scroll;
+        frame.addView(scroll);
         LinearLayout root = Ui.column(ctx);
         int pad = Ui.dp(ctx, 16);
         root.setPadding(pad, pad, pad, pad);
@@ -107,13 +125,16 @@ public class SetupWizardFragment extends Fragment {
         LinearLayout firmwareCard = Ui.card(ctx);
         firmwareCard.addView(Ui.text(ctx, "2. Firmware N-Gage", 17, true));
         firmwareCard.addView(Ui.text(ctx,
-                "Pilih folder yang berisi hasil dump perangkat N-Gage kamu: file .ROM dan .RPKG "
-                        + "(atau file .VPL firmware). File dikenali otomatis.", 14, false));
+                "Pilih folder firmware N-Gage: folder paket \"Data\" (berisi devices.yml, drives, roms), "
+                        + "atau folder berisi file .ROM + .RPKG / .VPL. Bisa juga langsung file .ZIP paketnya.", 14, false));
         firmwareStatus = Ui.text(ctx, "", 14, true);
         firmwareCard.addView(firmwareStatus);
         Button firmwareButton = Ui.button(ctx, "Pilih folder firmware");
         firmwareButton.setOnClickListener(v -> pickFirmware());
         firmwareCard.addView(firmwareButton);
+        Button zipButton = Ui.button(ctx, "Pilih file ZIP firmware");
+        zipButton.setOnClickListener(v -> firmwareZipPicker.launch(new String[]{"application/zip"}));
+        firmwareCard.addView(zipButton);
         Button manualButton = Ui.button(ctx, "Pasang manual (layar perangkat EKA2L1)");
         manualButton.setOnClickListener(v -> openDeviceManager());
         firmwareCard.addView(manualButton);
@@ -136,7 +157,7 @@ public class SetupWizardFragment extends Fragment {
         finishButton.setOnClickListener(v -> finishSetup());
         root.addView(finishButton);
 
-        return scroll;
+        return frame;
     }
 
     @Override
@@ -147,7 +168,28 @@ public class SetupWizardFragment extends Fragment {
             actionBar.setDisplayHomeAsUpEnabled(false);
             actionBar.setTitle("Setup NGStation");
         }
-        refresh();
+        if (nativeReady) {
+            refresh();
+            return;
+        }
+        // Every native call needs the core started first, even with no device installed yet.
+        disposables.add(Single.fromCallable(Emulator::ensureNativeStarted)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableSingleObserver<Boolean>() {
+                    @Override
+                    public void onSuccess(@NonNull Boolean deviceReady) {
+                        nativeReady = true;
+                        loadingText.setVisibility(View.GONE);
+                        content.setVisibility(View.VISIBLE);
+                        refresh();
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        loadingText.setText("Emulator gagal disiapkan: " + e.getMessage());
+                    }
+                }));
     }
 
     @Override
@@ -157,6 +199,9 @@ public class SetupWizardFragment extends Fragment {
     }
 
     private void refresh() {
+        if (!nativeReady || !isAdded()) {
+            return;
+        }
         Context ctx = requireContext();
 
         boolean needsStoragePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
@@ -240,6 +285,11 @@ public class SetupWizardFragment extends Fragment {
         if (path == null) {
             return;
         }
+        File packRoot = FirmwarePack.findPackRoot(new File(path));
+        if (packRoot != null) {
+            installPack(() -> FirmwarePack.installFromFolder(packRoot, dataDir()));
+            return;
+        }
         File[] files = new File(path).listFiles();
         String rom = null, rpkg = null, vpl = null;
         if (files != null) {
@@ -265,6 +315,12 @@ public class SetupWizardFragment extends Fragment {
             return;
         }
         DocumentFile root = DocumentFile.fromTreeUri(requireContext(), Uri.parse(treeUri));
+        DocumentFile packRoot = FirmwarePack.findPackRoot(root);
+        if (packRoot != null) {
+            Context app = requireContext().getApplicationContext();
+            installPack(() -> FirmwarePack.installFromDocument(app, packRoot, dataDir()));
+            return;
+        }
         String rom = null, rpkg = null, vpl = null;
         long romSize = -1;
         if (root != null) {
@@ -284,6 +340,52 @@ public class SetupWizardFragment extends Fragment {
             }
         }
         installFirmware(rom, rpkg, vpl);
+    }
+
+    private void onFirmwareZip(String uri) {
+        if (uri == null) {
+            return;
+        }
+        Context app = requireContext().getApplicationContext();
+        installPack(() -> FirmwarePack.installFromZip(app, Uri.parse(uri), dataDir()));
+    }
+
+    private static File dataDir() {
+        return new File(Emulator.getEmulatorDir(), "data");
+    }
+
+    private interface PackJob {
+        void run() throws Exception;
+    }
+
+    private void installPack(PackJob job) {
+        ProgressDialog dialog = new ProgressDialog(getActivity());
+        dialog.setIndeterminate(true);
+        dialog.setCancelable(false);
+        dialog.setMessage("Menyalin paket firmware… bisa makan waktu beberapa menit.");
+        dialog.show();
+
+        disposables.add(Completable.fromAction(() -> {
+                    job.run();
+                    // Registers the devices from the freshly copied drives/z folders.
+                    Emulator.rescanDevices();
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableCompletableObserver() {
+                    @Override
+                    public void onComplete() {
+                        dialog.dismiss();
+                        Toast.makeText(getContext(), "Paket firmware terpasang", Toast.LENGTH_SHORT).show();
+                        refresh();
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        dialog.dismiss();
+                        showError("Gagal memasang paket firmware: " + e.getMessage());
+                    }
+                }));
     }
 
     @SuppressLint("CheckResult")
