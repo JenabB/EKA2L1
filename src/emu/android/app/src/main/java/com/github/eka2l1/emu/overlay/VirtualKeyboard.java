@@ -335,6 +335,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
     private PointF[] snapOffsets;
     protected boolean[] snapValid;
     private int[] snapStack;
+    private PointF[] relativeOffsets;
 
     private int layoutEditMode;
     private int editedIndex;
@@ -410,6 +411,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
         snapOffsets = new PointF[keypad.length];
         snapValid = new boolean[keypad.length];
         snapStack = new int[keypad.length];
+        relativeOffsets = new PointF[keypad.length];
 
         drawPaint.setStyle(Paint.Style.STROKE);
         fillPaint.setStyle(Paint.Style.FILL);
@@ -578,13 +580,13 @@ public class VirtualKeyboard implements Overlay, Runnable {
                 // Held sideways like an N-Gage: game screen in the middle, an 8-way pad with
                 // the OK key on the left, the 3x4 keypad on the right, soft keys on top and
                 // the green/red keys at the bottom.
-                keyScales[SCALE_JOYSTICK] = 1;
+                keyScales[SCALE_JOYSTICK] = 0.95f;
                 keyScales[SCALE_SOFT_KEYS] = 0.8f;
                 keyScales[SCALE_DIAL_KEYS] = 0.8f;
                 keyScales[SCALE_DIGITS] = 0.75f;
-                keyScales[SCALE_FIRE_KEY] = 1;
+                keyScales[SCALE_FIRE_KEY] = 0.95f;
 
-                setSnap(KEY_LEFT, SCREEN, RectSnap.ALIGN_VCENTER | RectSnap.ALIGN_LEFT);
+                setSnap(KEY_LEFT, SCREEN, RectSnap.ALIGN_VCENTER | RectSnap.ALIGN_LEFT, 0.2f, 0);
                 setSnap(KEY_FIRE, KEY_LEFT, RectSnap.EXT_EAST);
                 setSnap(KEY_RIGHT, KEY_FIRE, RectSnap.EXT_EAST);
                 setSnap(KEY_UP, KEY_FIRE, RectSnap.EXT_NORTH);
@@ -594,7 +596,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
                 setSnap(KEY_DOWN_LEFT, KEY_LEFT, RectSnap.EXT_SOUTH);
                 setSnap(KEY_DOWN_RIGHT, KEY_RIGHT, RectSnap.EXT_SOUTH);
 
-                setSnap(KEY_NUM9, SCREEN, RectSnap.ALIGN_RIGHT | RectSnap.BOTTOM_VCENTER);
+                setSnap(KEY_NUM9, SCREEN, RectSnap.ALIGN_RIGHT | RectSnap.BOTTOM_VCENTER, -0.3f, 0);
                 setSnap(KEY_NUM8, KEY_NUM9, RectSnap.EXT_WEST);
                 setSnap(KEY_NUM7, KEY_NUM8, RectSnap.EXT_WEST);
                 setSnap(KEY_NUM6, KEY_NUM9, RectSnap.EXT_NORTH);
@@ -616,10 +618,10 @@ public class VirtualKeyboard implements Overlay, Runnable {
                 keypad[KEY_CANCEL].setVisible(false);
                 resetOptionalKeys();
 
-                setSnap(KEY_SOFT_LEFT, SCREEN, RectSnap.INT_NORTHWEST);
-                setSnap(KEY_SOFT_RIGHT, SCREEN, RectSnap.INT_NORTHEAST);
-                setSnap(KEY_CALL, SCREEN, RectSnap.INT_SOUTHWEST);
-                setSnap(KEY_END, SCREEN, RectSnap.INT_SOUTHEAST);
+                setSnap(KEY_SOFT_LEFT, SCREEN, RectSnap.INT_NORTHWEST, 0.3f, 0.12f);
+                setSnap(KEY_SOFT_RIGHT, SCREEN, RectSnap.INT_NORTHEAST, -0.3f, 0.12f);
+                setSnap(KEY_CALL, SCREEN, RectSnap.INT_SOUTHWEST, 0.3f, -0.12f);
+                setSnap(KEY_END, SCREEN, RectSnap.INT_SOUTHEAST, -0.3f, -0.12f);
                 keypad[KEY_CALL].setVisible(true);
                 keypad[KEY_END].setVisible(true);
                 break;
@@ -656,6 +658,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
         for (int group = 0; group < keyScaleGroups.length; group++) {
             resizeKeyGroup(group);
         }
+        applyRelativeOffsets();
         snapKeys();
         repaint();
         listener.layoutChanged(this);
@@ -723,6 +726,8 @@ public class VirtualKeyboard implements Overlay, Runnable {
                                 snapModes[key] = dis.readInt();
                                 snapOffsets[key].x = dis.readFloat();
                                 snapOffsets[key].y = dis.readFloat();
+                                // A saved layout is in pixels already.
+                                relativeOffsets[key] = null;
                                 found = true;
                                 break;
                             }
@@ -814,6 +819,26 @@ public class VirtualKeyboard implements Overlay, Runnable {
         snapModes[key] = mode;
         snapOffsets[key] = new PointF();
         snapValid[key] = false;
+        relativeOffsets[key] = null;
+    }
+
+    /**
+     * NGStation: like {@link #setSnap}, plus an offset measured in key sizes, so a default
+     * layout can keep clear of rounded screen corners on any display size. The pixel offset
+     * is worked out in {@link #resize}; editing the key in the layout editor drops it.
+     */
+    protected void setSnap(int key, int origin, int mode, float dx, float dy) {
+        setSnap(key, origin, mode);
+        relativeOffsets[key] = new PointF(dx, dy);
+    }
+
+    private void applyRelativeOffsets() {
+        for (int i = 0; i < keypad.length; i++) {
+            if (relativeOffsets[i] != null) {
+                snapOffsets[i].set(relativeOffsets[i].x * keySize, relativeOffsets[i].y * keySize);
+                snapValid[i] = false;
+            }
+        }
     }
 
     private boolean findSnap(int target, int origin) {
@@ -821,6 +846,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
         if (snapModes[target] != RectSnap.NO_SNAP) {
             snapOrigins[target] = origin;
             snapOffsets[target].set(0, 0);
+            relativeOffsets[target] = null;
             for (VirtualKey aKeypad : keypad) {
                 origin = snapOrigins[origin];
                 if (origin == SCREEN) {
@@ -937,6 +963,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
         for (int group = 0; group < keyScaleGroups.length; group++) {
             resizeKeyGroup(group);
         }
+        applyRelativeOffsets();
         snapKeys();
         repaint();
     }
@@ -1111,6 +1138,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
                     RectF rect = keypad[editedIndex].getRect();
                     rect.offsetTo(x - offsetX, y - offsetY);
                     snapModes[editedIndex] = RectSnap.NO_SNAP;
+                    relativeOffsets[editedIndex] = null;
                     for (int i = 0; i < keypad.length; i++) {
                         if (i != editedIndex && findSnap(editedIndex, i)) {
                             break;
