@@ -40,7 +40,7 @@ public class FilteredFilePickerActivity extends AbstractFilePickerActivity<File>
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         AppDataStore dataStore = AppDataStore.getAndroidStore();
-        String theme = dataStore.getString("theme", "light");
+        String theme = dataStore.getString("theme", "dark");
         if ("dark".equals(theme)) {
             setTheme(R.style.FilePickerTheme);
         } else {

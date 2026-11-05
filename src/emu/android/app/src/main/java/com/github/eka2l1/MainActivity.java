@@ -83,15 +83,8 @@ public class MainActivity extends BaseActivity {
             return;
         }
 
-        AppDataStore dataStore = AppDataStore.getAndroidStore();
-        boolean warningShown = dataStore.getBoolean(PREF_STORAGE_WARNING_SHOWN, false);
-        if (!FileUtils.isExternalStorageLegacy() && !warningShown) {
-            showScopedStorageDialog();
-            dataStore.putBoolean(PREF_STORAGE_WARNING_SHOWN, true);
-            dataStore.save();
-            return;
-        }
-
+        // NGStation: the setup screen explains where data lives, so the stock
+        // scoped-storage warning dialog is not shown.
         showAppList();
     }
 

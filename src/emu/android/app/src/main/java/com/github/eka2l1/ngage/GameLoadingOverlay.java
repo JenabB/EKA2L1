@@ -65,7 +65,7 @@ public final class GameLoadingOverlay {
         LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER);
-        box.setBackgroundColor(Ui.BLACK);
+        box.setBackgroundColor(Ui.BG);
         box.setClickable(true);
 
         TextView brand = Ui.text(activity, Ui.brand(), 26, true);
@@ -81,7 +81,7 @@ public final class GameLoadingOverlay {
         }
 
         ProgressBar spinner = new ProgressBar(activity);
-        spinner.setIndeterminateTintList(ColorStateList.valueOf(Ui.RED));
+        spinner.setIndeterminateTintList(ColorStateList.valueOf(Ui.ORANGE));
         int size = Ui.dp(activity, 48);
         box.addView(spinner, new LinearLayout.LayoutParams(size, size));
 

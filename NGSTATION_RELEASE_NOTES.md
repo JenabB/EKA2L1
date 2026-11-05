@@ -10,7 +10,19 @@ Launcher N-Gage ala PPSSPP untuk Android: setup sekali, lalu pilih game dan main
 
 ## Riwayat rilis
 
-Semua build pada 3 November 2026, terbaru di atas.
+Terbaru di atas.
+
+### Build 7 — Tampilan gaya N-Gage QD (5 November 2026)
+- **Baru:** layar setup didesain ulang dengan palet QD: bodi arang, tombol utama oranye, tombol kedua silver, nomor langkah seperti tombol tengah QD (hitam dengan angka oranye), gambar perangkat di atas, dan indikator kemajuan 3 langkah
+- **Baru:** langkah yang sudah selesai otomatis terlipat menjadi satu baris status, dengan tombol "Ubah" untuk membukanya lagi
+- **Perbaikan:** tema bawaan EKA2L1 (bilah ungu, dialog putih) diganti tema gelap dengan aksen oranye di seluruh aplikasi
+- **Perbaikan:** dialog peringatan penyimpanan bawaan EKA2L1 tidak muncul lagi; penjelasannya dipindah ke layar setup
+- Library dan layar loading ikut memakai palet arang–oranye
+
+### Build 6 — Ikon aplikasi (4 November 2026)
+- **Baru:** ikon aplikasi baru (perangkat genggam bergaya sederhana), pas di semua bentuk ikon launcher, plus ikon Play Store 512×512
+
+Build 1–5 dirilis pada 3 November 2026.
 
 ### Build 5 — Layout N-Gage QD (`52aa60e`)
 - **Baru:** layout tombol gaya N-Gage QD. D-pad berbentuk salib dengan titik oranye di cekungan bulat (bagian yang ditekan menyala oranye), keypad melengkung di panel arang, soft-L dan tombol panggil di bawah D-pad, soft-R di atas keypad, tombol tutup di kanan bawah

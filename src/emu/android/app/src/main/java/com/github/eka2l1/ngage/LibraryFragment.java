@@ -107,7 +107,7 @@ public class LibraryFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
         FrameLayout frame = new FrameLayout(ctx);
-        Ui.setBlackBackground(frame);
+        Ui.setBackground(frame);
 
         LinearLayout root = Ui.column(ctx);
         int pad = Ui.dp(ctx, 12);
@@ -641,7 +641,7 @@ public class LibraryFragment extends Fragment {
                 int pad = Ui.dp(ctx, 10);
                 tile.setPadding(pad, pad, pad, pad);
                 android.graphics.drawable.StateListDrawable bg = new android.graphics.drawable.StateListDrawable();
-                bg.addState(new int[]{android.R.attr.state_pressed}, Ui.rounded(ctx, 0xFF2A0A0B, Ui.RED, 14));
+                bg.addState(new int[]{android.R.attr.state_pressed}, Ui.rounded(ctx, 0xFF3A2A20, Ui.ORANGE, 14));
                 bg.addState(new int[]{}, Ui.rounded(ctx, Ui.SURFACE, Ui.BORDER, 14));
                 tile.setBackground(bg);
 
@@ -680,7 +680,7 @@ public class LibraryFragment extends Fragment {
                 holder.status.setTextColor(Ui.SILVER);
             } else {
                 holder.status.setText(game.archive ? "ZIP · ketuk untuk pasang" : "Ketuk untuk pasang");
-                holder.status.setTextColor(Ui.RED);
+                holder.status.setTextColor(Ui.ORANGE);
             }
             return convertView;
         }

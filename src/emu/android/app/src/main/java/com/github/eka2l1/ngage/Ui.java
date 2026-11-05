@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.StateListDrawable;
@@ -29,21 +30,23 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 
-/** Palette and helpers for the code-built launcher screens: black, red and white like the N-Gage. */
+/**
+ * Palette and helpers for the code-built launcher screens, taken from the N-Gage QD:
+ * charcoal body, silver keys, black centre keys and orange legends.
+ */
 public final class Ui {
-    public static final int BLACK = 0xFF000000;
-    public static final int SURFACE = 0xFF141414;
-    public static final int SURFACE_HI = 0xFF1E1E1E;
-    public static final int BORDER = 0xFF2E2E2E;
-    public static final int RED = 0xFFE01B22;
-    public static final int RED_DARK = 0xFF9E1016;
+    public static final int BG = 0xFF1A1B1D;
+    public static final int SURFACE = 0xFF25272A;
+    public static final int SURFACE_HI = 0xFF303236;
+    public static final int BORDER = 0xFF3A3D41;
+    public static final int ORANGE = 0xFFFF6A1A;
+    public static final int ORANGE_DARK = 0xFFD9530C;
+    public static final int SILVER = 0xFFC9CBCE;
+    public static final int SILVER_DARK = 0xFFA9ACB0;
+    public static final int KEY_BLACK = 0xFF121314;
+    public static final int CHARCOAL = 0xFF2E2F32;
     public static final int WHITE = 0xFFFFFFFF;
-    public static final int SILVER = 0xFFB8B8B8;
-    public static final int MUTED = 0xFF8A8A8A;
-    public static final int OK = 0xFF5BD16A;
-
-    // Kept for older call sites.
-    static final int ACCENT = RED;
+    public static final int MUTED = 0xFF9A9DA2;
 
     private Ui() {
     }
@@ -53,33 +56,41 @@ public final class Ui {
                 context.getResources().getDisplayMetrics()));
     }
 
-    /** Black action bar with a thin red rule, black status bar. */
+    /** Charcoal action bar with a thin orange rule, charcoal system bars. */
     static void applyChrome(Activity activity, ActionBar actionBar, CharSequence title) {
         if (actionBar != null) {
             GradientDrawable base = new GradientDrawable();
-            base.setColor(BLACK);
+            base.setColor(BG);
             GradientDrawable rule = new GradientDrawable();
-            rule.setColor(RED);
-            LayerDrawable bg = new LayerDrawable(new android.graphics.drawable.Drawable[]{rule, base});
+            rule.setColor(ORANGE);
+            LayerDrawable bg = new LayerDrawable(new Drawable[]{rule, base});
             bg.setLayerInset(1, 0, 0, 0, dp(activity, 2));
             actionBar.setBackgroundDrawable(bg);
             actionBar.setTitle(title);
+            actionBar.setElevation(0);
         }
-        activity.getWindow().setStatusBarColor(BLACK);
-        activity.getWindow().setNavigationBarColor(BLACK);
-        activity.getWindow().getDecorView().setBackgroundColor(BLACK);
+        activity.getWindow().setStatusBarColor(BG);
+        activity.getWindow().setNavigationBarColor(BG);
+        activity.getWindow().getDecorView().setBackgroundColor(BG);
     }
 
-    /** "NGSTATION" with the first two letters in red. */
+    /** "NGSTATION" with the first two letters in orange. */
     static CharSequence brand() {
         SpannableString s = new SpannableString("NGSTATION");
-        s.setSpan(new ForegroundColorSpan(RED), 0, 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ORANGE), 0, 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return s;
     }
 
     static LinearLayout column(Context context) {
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
+        return layout;
+    }
+
+    static LinearLayout row(Context context) {
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setGravity(Gravity.CENTER_VERTICAL);
         return layout;
     }
 
@@ -93,11 +104,18 @@ public final class Ui {
         return bg;
     }
 
+    static GradientDrawable circle(int fill) {
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.OVAL);
+        d.setColor(fill);
+        return d;
+    }
+
     static LinearLayout card(Context context) {
         LinearLayout card = column(context);
         int pad = dp(context, 16);
         card.setPadding(pad, pad, pad, pad);
-        card.setBackground(rounded(context, SURFACE, BORDER, 14));
+        card.setBackground(rounded(context, SURFACE, BORDER, 18));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.bottomMargin = dp(context, 12);
@@ -105,25 +123,18 @@ public final class Ui {
         return card;
     }
 
-    /** Small red step badge ("1", "2", …) next to a card title. */
-    static LinearLayout stepHeader(Context context, String number, String title) {
-        LinearLayout row = new LinearLayout(context);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        TextView badge = text(context, number, 14, true);
-        badge.setTextColor(WHITE);
+    /** Round badge like the QD's black centre keys: orange digit on black, or a tick on orange when done. */
+    static TextView badge(Context context, String number) {
+        TextView badge = text(context, number, 15, true);
         badge.setGravity(Gravity.CENTER);
-        int size = dp(context, 26);
-        GradientDrawable circle = new GradientDrawable();
-        circle.setShape(GradientDrawable.OVAL);
-        circle.setColor(RED);
-        badge.setBackground(circle);
-        row.addView(badge, new LinearLayout.LayoutParams(size, size));
-        TextView label = text(context, title, 17, true);
-        label.setPadding(dp(context, 10), 0, 0, 0);
-        row.addView(label);
-        row.setPadding(0, 0, 0, dp(context, 6));
-        return row;
+        setBadgeDone(badge, number, false);
+        return badge;
+    }
+
+    static void setBadgeDone(TextView badge, String number, boolean done) {
+        badge.setText(done ? "✓" : number);
+        badge.setTextColor(done ? WHITE : ORANGE);
+        badge.setBackground(circle(done ? ORANGE : KEY_BLACK));
     }
 
     static TextView text(Context context, CharSequence value, float sp, boolean bold) {
@@ -139,41 +150,57 @@ public final class Ui {
 
     static TextView muted(Context context, CharSequence value, float sp) {
         TextView tv = text(context, value, sp, false);
-        tv.setTextColor(SILVER);
+        tv.setTextColor(MUTED);
+        tv.setLineSpacing(0, 1.15f);
         return tv;
     }
 
-    /** Filled red button: the main action on a screen. */
+    /** Orange pill: the main action on a screen. */
     static Button button(Context context, CharSequence label) {
-        return makeButton(context, label, RED, RED_DARK, 0, WHITE);
+        return makeButton(context, label, ORANGE, ORANGE_DARK, WHITE);
     }
 
-    /** Dark outlined button: secondary actions. */
+    /** Silver pill with charcoal text, like the QD's silver keys: secondary actions. */
     static Button secondaryButton(Context context, CharSequence label) {
-        return makeButton(context, label, SURFACE_HI, BORDER, BORDER, WHITE);
+        return makeButton(context, label, SILVER, SILVER_DARK, CHARCOAL);
     }
 
-    private static Button makeButton(Context context, CharSequence label, int fill, int pressed,
-                                     int stroke, int textColor) {
+    /** Borderless orange text: minor actions. */
+    static Button textButton(Context context, CharSequence label) {
         Button button = new Button(context);
         button.setText(label);
         button.setAllCaps(false);
-        button.setTextColor(textColor);
+        button.setTextColor(ORANGE);
+        button.setTypeface(Typeface.DEFAULT_BOLD);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        button.setStateListAnimator(null);
+        button.setBackground(new ColorDrawable(0));
+        button.setMinHeight(0);
+        button.setMinimumHeight(0);
+        int pad = dp(context, 8);
+        button.setPadding(pad, pad, pad, pad);
+        return button;
+    }
+
+    private static Button makeButton(Context context, CharSequence label, int fill, int pressed, int textColor) {
+        Button button = new Button(context);
+        button.setText(label);
+        button.setAllCaps(false);
         button.setTypeface(Typeface.DEFAULT_BOLD);
         button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         button.setStateListAnimator(null);
 
         StateListDrawable states = new StateListDrawable();
-        states.addState(new int[]{-android.R.attr.state_enabled}, rounded(context, 0xFF2A2A2A, 0, 10));
-        states.addState(new int[]{android.R.attr.state_pressed}, rounded(context, pressed, stroke, 10));
-        states.addState(new int[]{}, rounded(context, fill, stroke, 10));
+        states.addState(new int[]{-android.R.attr.state_enabled}, rounded(context, SURFACE_HI, 0, 26));
+        states.addState(new int[]{android.R.attr.state_pressed}, rounded(context, pressed, 0, 26));
+        states.addState(new int[]{}, rounded(context, fill, 0, 26));
         button.setBackground(states);
         button.setTextColor(new ColorStateList(
                 new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}},
-                new int[]{0xFF6A6A6A, textColor}));
+                new int[]{0xFF6A6D72, textColor}));
 
-        int padV = dp(context, 12);
-        button.setPadding(dp(context, 16), padV, dp(context, 16), padV);
+        int padV = dp(context, 13);
+        button.setPadding(dp(context, 18), padV, dp(context, 18), padV);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(context, 10);
@@ -182,7 +209,7 @@ public final class Ui {
         return button;
     }
 
-    static void setBlackBackground(View view) {
-        view.setBackground(new ColorDrawable(BLACK));
+    static void setBackground(View view) {
+        view.setBackground(new ColorDrawable(BG));
     }
 }

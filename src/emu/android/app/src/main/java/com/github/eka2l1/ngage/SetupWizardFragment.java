@@ -64,15 +64,15 @@ import io.reactivex.schedulers.Schedulers;
 public class SetupWizardFragment extends Fragment {
     private final CompositeDisposable disposables = new CompositeDisposable();
 
-    private TextView storageStatus;
-    private TextView firmwareStatus;
-    private TextView gamesStatus;
+    private StepCard storageStep;
+    private StepCard firmwareStep;
+    private StepCard gamesStep;
     private Button finishButton;
-    private LinearLayout storageCard;
+    private TextView progressText;
+    private final View[] progressDots = new View[3];
     private View content;
     private TextView loadingText;
     private View loadingView;
-    private Button storageButton;
     private boolean nativeReady;
     private boolean autoFirmwareChecked;
 
@@ -93,12 +93,12 @@ public class SetupWizardFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
         android.widget.FrameLayout frame = new android.widget.FrameLayout(ctx);
-        Ui.setBlackBackground(frame);
+        Ui.setBackground(frame);
 
         LinearLayout loading = Ui.column(ctx);
         loading.setGravity(android.view.Gravity.CENTER);
         android.widget.ProgressBar spinner = new android.widget.ProgressBar(ctx);
-        spinner.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.RED));
+        spinner.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.ORANGE));
         loading.addView(spinner);
         loadingText = Ui.muted(ctx, "Menyiapkan emulator…", 15);
         loadingText.setGravity(android.view.Gravity.CENTER);
@@ -116,67 +116,89 @@ public class SetupWizardFragment extends Fragment {
         frame.addView(scroll);
         LinearLayout root = Ui.column(ctx);
         int pad = Ui.dp(ctx, 18);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, Ui.dp(ctx, 8), pad, pad);
         scroll.addView(root);
 
+        // Hero: the handheld, the brand and how far along setup is.
+        android.widget.ImageView hero = new android.widget.ImageView(ctx);
+        hero.setImageResource(R.drawable.ngs_hero);
+        hero.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        hero.setAdjustViewBounds(true);
+        LinearLayout.LayoutParams heroLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(ctx, 150));
+        root.addView(hero, heroLp);
+
         TextView brand = Ui.text(ctx, Ui.brand(), 30, true);
-        brand.setLetterSpacing(0.12f);
+        brand.setLetterSpacing(0.14f);
+        brand.setGravity(android.view.Gravity.CENTER);
         root.addView(brand);
-        TextView intro = Ui.muted(ctx, "Tiga langkah sekali saja, setelah itu tinggal pilih game dan main.", 14);
-        intro.setPadding(0, Ui.dp(ctx, 4), 0, Ui.dp(ctx, 18));
-        root.addView(intro);
+        TextView tagline = Ui.muted(ctx, "Main game N-Gage di HP Android", 14);
+        tagline.setGravity(android.view.Gravity.CENTER);
+        tagline.setPadding(0, Ui.dp(ctx, 2), 0, Ui.dp(ctx, 14));
+        root.addView(tagline);
+
+        LinearLayout progress = Ui.row(ctx);
+        progress.setGravity(android.view.Gravity.CENTER);
+        progress.setPadding(0, 0, 0, Ui.dp(ctx, 16));
+        for (int i = 0; i < progressDots.length; i++) {
+            View dot = new View(ctx);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(ctx, 28), Ui.dp(ctx, 6));
+            lp.rightMargin = Ui.dp(ctx, 6);
+            dot.setBackground(Ui.rounded(ctx, Ui.SURFACE_HI, 0, 3));
+            progress.addView(dot, lp);
+            progressDots[i] = dot;
+        }
+        progressText = Ui.muted(ctx, "", 13);
+        progressText.setPadding(Ui.dp(ctx, 6), 0, 0, 0);
+        progress.addView(progressText);
+        root.addView(progress);
 
         // Step 1: storage access (Android 11+ only).
-        storageCard = Ui.card(ctx);
-        storageCard.addView(Ui.stepHeader(ctx, "1", "Izin akses file"));
-        storageCard.addView(Ui.muted(ctx, "Supaya emulator bisa membaca game dan firmware langsung dari "
-                + "penyimpanan, dan membuat folder Games/N-Gage otomatis.", 14));
-        storageStatus = Ui.text(ctx, "", 14, true);
-        storageCard.addView(storageStatus);
-        storageButton = Ui.button(ctx, "Beri izin akses semua file");
+        storageStep = new StepCard(ctx, "1", "Izin akses file",
+                "Supaya emulator bisa membaca game dan firmware langsung dari penyimpanan, "
+                        + "dan membuat folder Games/N-Gage otomatis.");
+        Button storageButton = Ui.button(ctx, "Beri izin akses semua file");
         storageButton.setOnClickListener(v -> openAllFilesAccessSettings());
-        storageCard.addView(storageButton);
-        root.addView(storageCard);
+        storageStep.addAction(storageButton);
+        root.addView(storageStep.card);
 
         // Step 2: firmware.
-        LinearLayout firmwareCard = Ui.card(ctx);
-        firmwareCard.addView(Ui.stepHeader(ctx, "2", "Firmware N-Gage"));
-        firmwareCard.addView(Ui.muted(ctx,
-                "Taruh file .ZIP paket firmware di folder Games/N-Gage/Firmware, lalu buka "
-                        + "aplikasi ini: firmware dipasang otomatis. Atau pilih manual di bawah "
-                        + "(file .ZIP, folder \"Data\", atau folder berisi .ROM + .RPKG / .VPL).", 14));
-        firmwareStatus = Ui.text(ctx, "", 14, true);
-        firmwareCard.addView(firmwareStatus);
+        firmwareStep = new StepCard(ctx, "2", "Firmware",
+                "Taruh file .ZIP paket firmware di Games/N-Gage/Firmware, lalu buka aplikasi ini: "
+                        + "firmware terpasang otomatis. Atau pilih sendiri di bawah.");
         Button zipButton = Ui.button(ctx, "Pilih file ZIP firmware");
         zipButton.setOnClickListener(v -> firmwareZipPicker.launch(new String[]{"application/zip"}));
-        firmwareCard.addView(zipButton);
+        firmwareStep.addAction(zipButton);
         Button firmwareButton = Ui.secondaryButton(ctx, "Pilih folder firmware");
         firmwareButton.setOnClickListener(v -> pickFirmware());
-        firmwareCard.addView(firmwareButton);
-        Button manualButton = Ui.secondaryButton(ctx, "Pasang manual (layar perangkat EKA2L1)");
+        firmwareStep.addAction(firmwareButton);
+        Button manualButton = Ui.textButton(ctx, "Pasang manual (ROM + RPKG)");
         manualButton.setOnClickListener(v -> openDeviceManager());
-        firmwareCard.addView(manualButton);
-        root.addView(firmwareCard);
+        firmwareStep.addAction(manualButton);
+        root.addView(firmwareStep.card);
 
         // Step 3: games folder.
-        LinearLayout gamesCard = Ui.card(ctx);
-        gamesCard.addView(Ui.stepHeader(ctx, "3", "Folder game"));
-        gamesCard.addView(Ui.muted(ctx,
-                "Default-nya folder Games/N-Gage di memori HP (dibuat otomatis). Taruh tiap game "
-                        + "sebagai satu folder (berisi System/Apps) atau file .zip di sana.", 14));
-        gamesStatus = Ui.text(ctx, "", 14, true);
-        gamesCard.addView(gamesStatus);
-        Button defaultButton = Ui.secondaryButton(ctx, "Pakai folder default (Games/N-Gage)");
+        gamesStep = new StepCard(ctx, "3", "Folder game",
+                "Taruh tiap game sebagai satu folder (berisi System/Apps) atau file .zip "
+                        + "di folder ini.");
+        Button defaultButton = Ui.button(ctx, "Pakai Games/N-Gage");
         defaultButton.setOnClickListener(v -> useDefaultGamesFolder(true));
-        gamesCard.addView(defaultButton);
+        gamesStep.addAction(defaultButton);
         Button gamesButton = Ui.secondaryButton(ctx, "Pilih folder lain");
         gamesButton.setOnClickListener(v -> pickGamesFolder());
-        gamesCard.addView(gamesButton);
-        root.addView(gamesCard);
+        gamesStep.addAction(gamesButton);
+        root.addView(gamesStep.card);
 
-        finishButton = Ui.button(ctx, "Selesai — buka library");
+        finishButton = Ui.button(ctx, "Mulai main");
+        finishButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 17);
         finishButton.setOnClickListener(v -> finishSetup());
         root.addView(finishButton);
+
+        TextView note = Ui.muted(ctx, "Game yang sudah dipasang dan save-nya tersimpan di folder aplikasi, "
+                + "jadi ikut terhapus kalau aplikasi di-uninstall. Firmware di Games/N-Gage/Firmware "
+                + "akan terpasang lagi otomatis.", 12);
+        note.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 16), Ui.dp(ctx, 4), 0);
+        root.addView(note);
 
         return frame;
     }
@@ -227,45 +249,37 @@ public class SetupWizardFragment extends Fragment {
         Context ctx = requireContext();
 
         boolean needsStoragePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
-        storageCard.setVisibility(needsStoragePermission ? View.VISIBLE : View.GONE);
-        if (FileUtils.hasDirectStorageAccess()) {
-            setStatus(storageStatus, "✓ Izin sudah diberikan", Ui.OK);
-            storageButton.setVisibility(View.GONE);
+        storageStep.card.setVisibility(needsStoragePermission ? View.VISIBLE : View.GONE);
+        boolean storageOk = FileUtils.hasDirectStorageAccess();
+        if (storageOk) {
+            storageStep.setState(true, "Izin sudah diberikan");
             // First time with storage access: create Games/N-Gage and use it.
             if (NGageLibrary.getGamesDir(ctx) == null) {
                 useDefaultGamesFolder(false);
             }
         } else {
-            setStatus(storageStatus, "Belum diizinkan (disarankan; tanpa ini dipakai mode SAF yang lebih lambat)", Ui.MUTED);
-            storageButton.setVisibility(View.VISIBLE);
+            storageStep.setState(false, "Disarankan; tanpa izin ini memakai mode yang lebih lambat");
         }
 
         String[] devices = Emulator.getDevices();
-        if (devices != null && devices.length > 0) {
-            String names = TextUtils.join(", ", devices);
-            setStatus(firmwareStatus, "✓ Terpasang: " + names, Ui.OK);
-        } else {
-            setStatus(firmwareStatus, "Belum ada firmware", Ui.MUTED);
-        }
+        boolean hasDevice = devices != null && devices.length > 0;
+        firmwareStep.setState(hasDevice, hasDevice
+                ? "Terpasang: " + TextUtils.join(", ", devices)
+                : "Belum ada firmware");
 
         String gamesDir = NGageLibrary.getGamesDir(ctx);
-        if (gamesDir != null) {
-            setStatus(gamesStatus, "✓ " + displayPath(gamesDir), Ui.OK);
-        } else {
-            setStatus(gamesStatus, "Belum dipilih", Ui.MUTED);
-        }
+        gamesStep.setState(gamesDir != null, gamesDir != null ? displayPath(gamesDir) : "Belum dipilih");
 
-        boolean hasDevice = devices != null && devices.length > 0;
+        int done = (storageOk || !needsStoragePermission ? 1 : 0) + (hasDevice ? 1 : 0) + (gamesDir != null ? 1 : 0);
+        for (int i = 0; i < progressDots.length; i++) {
+            progressDots[i].setBackground(Ui.rounded(ctx, i < done ? Ui.ORANGE : Ui.SURFACE_HI, 0, 3));
+        }
+        progressText.setText(done == 3 ? "Siap main" : done + " dari 3 langkah");
+
         finishButton.setEnabled(hasDevice && gamesDir != null);
         if (!hasDevice) {
             autoInstallFirmware();
         }
-    }
-
-    private void setStatus(TextView view, String text, int color) {
-        view.setText(text);
-        view.setTextColor(color);
-        view.setPadding(0, Ui.dp(requireContext(), 10), 0, 0);
     }
 
     static String displayPath(String path) {
