@@ -146,7 +146,7 @@ public class LibraryFragment extends Fragment {
         emptyText = Ui.muted(ctx, "", 15);
         emptyText.setGravity(Gravity.CENTER);
         emptyView.addView(emptyText);
-        Button chooseButton = Ui.secondaryButton(ctx, "Pilih folder game lain");
+        Button chooseButton = Ui.secondaryButton(ctx, "Choose another games folder");
         chooseButton.setOnClickListener(v -> pickGamesFolder());
         emptyView.addView(chooseButton);
         emptyView.setVisibility(View.GONE);
@@ -201,7 +201,7 @@ public class LibraryFragment extends Fragment {
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
-        dialog.setMessage("Memuat library…");
+        dialog.setMessage("Loading library…");
         dialog.show();
 
         Single<LoadResult> single = Single.fromCallable(() -> {
@@ -281,11 +281,11 @@ public class LibraryFragment extends Fragment {
         emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
         grid.setVisibility(empty ? View.GONE : View.VISIBLE);
         if (dir == null) {
-            emptyText.setText("Belum ada folder game. Pilih folder yang berisi game N-Gage kamu.");
+            emptyText.setText("No games folder yet. Choose the folder that holds your N-Gage games.");
         } else {
-            emptyText.setText("Belum ada game di\n" + SetupWizardFragment.displayPath(dir)
-                    + "\n\nSalin game ke folder itu: tiap game satu folder (berisi System/Apps) "
-                    + "atau file .zip. Lalu pilih Muat ulang di menu.");
+            emptyText.setText("No games in\n" + SetupWizardFragment.displayPath(dir)
+                    + "\n\nCopy games there: one folder per game (containing System/Apps) "
+                    + "or a .zip file. Then pick Refresh in the menu.");
         }
     }
 
@@ -300,11 +300,11 @@ public class LibraryFragment extends Fragment {
             return;
         }
         new AlertDialog.Builder(requireContext())
-                .setTitle("Emulator gagal dimulai")
-                .setMessage("Firmware terpasang, tapi emulator tidak bisa dijalankan. "
-                        + "Coba pilih perangkat lain atau pasang ulang firmware.")
-                .setPositiveButton("Kelola perangkat", (d, w) -> openFragment(new DeviceListFragment()))
-                .setNegativeButton(android.R.string.cancel, null)
+                .setTitle("Emulator failed to start")
+                .setMessage("Firmware is installed, but the emulator could not start. "
+                        + "Try another device or reinstall the firmware.")
+                .setPositiveButton("Manage devices", (d, w) -> openFragment(new DeviceListFragment()))
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -335,7 +335,7 @@ public class LibraryFragment extends Fragment {
         if (found == -1) {
             return true;
         }
-        Toast.makeText(getContext(), "Beralih ke perangkat " + names[found], Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "Switching to device " + names[found], Toast.LENGTH_SHORT).show();
         Emulator.setCurrentDevice(found, false);
         AppUtils.restart(requireContext());
         return false;
@@ -371,7 +371,7 @@ public class LibraryFragment extends Fragment {
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
-        dialog.setMessage("Memasang " + game.title + "…\nHanya sekali, berikutnya langsung main.");
+        dialog.setMessage("Installing " + game.title + "…\nOnly needed once; next time it starts straight away.");
         dialog.show();
 
         Context app = requireContext().getApplicationContext();
@@ -395,7 +395,7 @@ public class LibraryFragment extends Fragment {
                     @Override
                     public void onError(@NonNull Throwable e) {
                         dialog.dismiss();
-                        showError("Gagal memasang game: " + e.getMessage());
+                        showError("Failed to install the game: " + e.getMessage());
                     }
                 }));
     }
@@ -439,8 +439,8 @@ public class LibraryFragment extends Fragment {
     /** Lets the user say which installed app is this game when matching was not sure. */
     private void askWhichApp(NGageGame game, boolean launchAfter) {
         if (installedApps.isEmpty()) {
-            showError("Game terpasang, tapi tidak muncul di daftar aplikasi emulator. "
-                    + "Coba buka Mode EKA2L1 lengkap dari menu.");
+            showError("The game was installed but does not show in the emulator app list. "
+                    + "Try Full EKA2L1 mode from the menu.");
             return;
         }
         String[] labels = new String[installedApps.size()];
@@ -448,7 +448,7 @@ public class LibraryFragment extends Fragment {
             labels[i] = installedApps.get(i).getTitle();
         }
         new AlertDialog.Builder(requireContext())
-                .setTitle("Aplikasi mana yang \"" + game.title + "\"?")
+                .setTitle("Which app is \"" + game.title + "\"?")
                 .setItems(labels, (d, which) -> {
                     AppItem item = installedApps.get(which);
                     bind(game, item);
@@ -456,22 +456,22 @@ public class LibraryFragment extends Fragment {
                         launch(item.getUid(), game.title);
                     }
                 })
-                .setNegativeButton(android.R.string.cancel, null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
     static String describeGameError(int code) {
         switch (code) {
             case Emulator.INSTALL_NG_GAME_ERROR_NO_GAME_DATA_FOLDER:
-                return "Folder System/Apps tidak ditemukan di game ini.";
+                return "No System/Apps folder found in this game.";
             case Emulator.INSTALL_NG_GAME_ERROR_MORE_THAN_ONE_DATA_FOLDER:
-                return "Ada lebih dari satu game di folder ini. Pisahkan jadi satu folder per game.";
+                return "This folder holds more than one game. Split it into one folder per game.";
             case Emulator.INSTALL_NG_GAME_ERROR_NO_GAME_REGISTERATION_INFO:
-                return "File info game (.aif/.app) tidak ditemukan.";
+                return "Game info file (.aif/.app) not found.";
             case Emulator.INSTALL_NG_GAME_ERROR_REGISTERATION_CORRUPTED:
-                return "File info game rusak.";
+                return "Game info file is corrupted.";
             default:
-                return "Gagal memasang game (kode " + code + ").";
+                return "Failed to install the game (code " + code + ").";
         }
     }
 
@@ -488,10 +488,10 @@ public class LibraryFragment extends Fragment {
         contextGame = games.get(position);
         menu.setHeaderTitle(contextGame.title);
         if (contextGame.isInstalled()) {
-            menu.add(Menu.NONE, CTX_SETTINGS, 0, "Pengaturan game (kontrol, layar)");
+            menu.add(Menu.NONE, CTX_SETTINGS, 0, "Game settings (controls, screen)");
         }
-        menu.add(Menu.NONE, CTX_REINSTALL, 1, "Pasang ulang");
-        menu.add(Menu.NONE, CTX_LINK, 2, "Hubungkan ke aplikasi terpasang…");
+        menu.add(Menu.NONE, CTX_REINSTALL, 1, "Reinstall");
+        menu.add(Menu.NONE, CTX_LINK, 2, "Link to an installed app…");
     }
 
     @Override
@@ -529,12 +529,12 @@ public class LibraryFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        menu.add(Menu.NONE, MENU_RESCAN, 0, "Muat ulang");
-        menu.add(Menu.NONE, MENU_CHANGE_FOLDER, 1, "Ganti folder game");
-        menu.add(Menu.NONE, MENU_DEVICES, 2, "Firmware / perangkat");
-        menu.add(Menu.NONE, MENU_SETTINGS, 3, "Pengaturan emulator");
-        menu.add(Menu.NONE, MENU_SETUP, 4, "Ulangi setup");
-        menu.add(Menu.NONE, MENU_ADVANCED, 5, "Mode EKA2L1 lengkap");
+        menu.add(Menu.NONE, MENU_RESCAN, 0, "Refresh");
+        menu.add(Menu.NONE, MENU_CHANGE_FOLDER, 1, "Change games folder");
+        menu.add(Menu.NONE, MENU_DEVICES, 2, "Firmware / devices");
+        menu.add(Menu.NONE, MENU_SETTINGS, 3, "Emulator settings");
+        menu.add(Menu.NONE, MENU_SETUP, 4, "Run setup again");
+        menu.add(Menu.NONE, MENU_ADVANCED, 5, "Full EKA2L1 mode");
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -607,9 +607,9 @@ public class LibraryFragment extends Fragment {
             return;
         }
         new AlertDialog.Builder(requireContext())
-                .setTitle("Ada masalah")
+                .setTitle("Something went wrong")
                 .setMessage(message)
-                .setPositiveButton(android.R.string.ok, null)
+                .setPositiveButton("OK", null)
                 .show();
     }
 
@@ -676,10 +676,10 @@ public class LibraryFragment extends Fragment {
                 holder.icon.setImageResource(R.mipmap.ic_ducky_foreground);
             }
             if (game.isInstalled()) {
-                holder.status.setText("▶ Siap main");
+                holder.status.setText("▶ Ready to play");
                 holder.status.setTextColor(Ui.SILVER);
             } else {
-                holder.status.setText(game.archive ? "ZIP · ketuk untuk pasang" : "Ketuk untuk pasang");
+                holder.status.setText(game.archive ? "ZIP · tap to install" : "Tap to install");
                 holder.status.setTextColor(Ui.ORANGE);
             }
             return convertView;

@@ -100,7 +100,7 @@ public class SetupWizardFragment extends Fragment {
         android.widget.ProgressBar spinner = new android.widget.ProgressBar(ctx);
         spinner.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.ORANGE));
         loading.addView(spinner);
-        loadingText = Ui.muted(ctx, "Menyiapkan emulator…", 15);
+        loadingText = Ui.muted(ctx, "Preparing the emulator…", 15);
         loadingText.setGravity(android.view.Gravity.CENTER);
         loadingText.setPadding(0, Ui.dp(ctx, 12), 0, 0);
         loading.addView(loadingText);
@@ -132,7 +132,7 @@ public class SetupWizardFragment extends Fragment {
         brand.setLetterSpacing(0.14f);
         brand.setGravity(android.view.Gravity.CENTER);
         root.addView(brand);
-        TextView tagline = Ui.muted(ctx, "Main game N-Gage di HP Android", 14);
+        TextView tagline = Ui.muted(ctx, "Play N-Gage games on Android", 14);
         tagline.setGravity(android.view.Gravity.CENTER);
         tagline.setPadding(0, Ui.dp(ctx, 2), 0, Ui.dp(ctx, 14));
         root.addView(tagline);
@@ -154,49 +154,49 @@ public class SetupWizardFragment extends Fragment {
         root.addView(progress);
 
         // Step 1: storage access (Android 11+ only).
-        storageStep = new StepCard(ctx, "1", "Izin akses file",
-                "Supaya emulator bisa membaca game dan firmware langsung dari penyimpanan, "
-                        + "dan membuat folder Games/N-Gage otomatis.");
-        Button storageButton = Ui.button(ctx, "Beri izin akses semua file");
+        storageStep = new StepCard(ctx, "1", "File access",
+                "Lets the emulator read games and firmware straight from storage, "
+                        + "and create the Games/N-Gage folder for you.");
+        Button storageButton = Ui.button(ctx, "Allow access to all files");
         storageButton.setOnClickListener(v -> openAllFilesAccessSettings());
         storageStep.addAction(storageButton);
         root.addView(storageStep.card);
 
         // Step 2: firmware.
         firmwareStep = new StepCard(ctx, "2", "Firmware",
-                "Taruh file .ZIP paket firmware di Games/N-Gage/Firmware, lalu buka aplikasi ini: "
-                        + "firmware terpasang otomatis. Atau pilih sendiri di bawah.");
-        Button zipButton = Ui.button(ctx, "Pilih file ZIP firmware");
+                "Put the firmware pack .ZIP in Games/N-Gage/Firmware and reopen the app: "
+                        + "it installs automatically. Or pick it yourself below.");
+        Button zipButton = Ui.button(ctx, "Choose firmware ZIP");
         zipButton.setOnClickListener(v -> firmwareZipPicker.launch(new String[]{"application/zip"}));
         firmwareStep.addAction(zipButton);
-        Button firmwareButton = Ui.secondaryButton(ctx, "Pilih folder firmware");
+        Button firmwareButton = Ui.secondaryButton(ctx, "Choose firmware folder");
         firmwareButton.setOnClickListener(v -> pickFirmware());
         firmwareStep.addAction(firmwareButton);
-        Button manualButton = Ui.textButton(ctx, "Pasang manual (ROM + RPKG)");
+        Button manualButton = Ui.textButton(ctx, "Install manually (ROM + RPKG)");
         manualButton.setOnClickListener(v -> openDeviceManager());
         firmwareStep.addAction(manualButton);
         root.addView(firmwareStep.card);
 
         // Step 3: games folder.
-        gamesStep = new StepCard(ctx, "3", "Folder game",
-                "Taruh tiap game sebagai satu folder (berisi System/Apps) atau file .zip "
-                        + "di folder ini.");
-        Button defaultButton = Ui.button(ctx, "Pakai Games/N-Gage");
+        gamesStep = new StepCard(ctx, "3", "Games folder",
+                "Put each game here as its own folder (containing System/Apps) or a .zip file "
+                        + "in this folder.");
+        Button defaultButton = Ui.button(ctx, "Use Games/N-Gage");
         defaultButton.setOnClickListener(v -> useDefaultGamesFolder(true));
         gamesStep.addAction(defaultButton);
-        Button gamesButton = Ui.secondaryButton(ctx, "Pilih folder lain");
+        Button gamesButton = Ui.secondaryButton(ctx, "Choose another folder");
         gamesButton.setOnClickListener(v -> pickGamesFolder());
         gamesStep.addAction(gamesButton);
         root.addView(gamesStep.card);
 
-        finishButton = Ui.button(ctx, "Mulai main");
+        finishButton = Ui.button(ctx, "Start playing");
         finishButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 17);
         finishButton.setOnClickListener(v -> finishSetup());
         root.addView(finishButton);
 
-        TextView note = Ui.muted(ctx, "Game yang sudah dipasang dan save-nya tersimpan di folder aplikasi, "
-                + "jadi ikut terhapus kalau aplikasi di-uninstall. Firmware di Games/N-Gage/Firmware "
-                + "akan terpasang lagi otomatis.", 12);
+        TextView note = Ui.muted(ctx, "Installed games and their saves are kept in the app folder, "
+                + "so they are removed if the app is uninstalled. Firmware in Games/N-Gage/Firmware "
+                + "is reinstalled automatically.", 12);
         note.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 16), Ui.dp(ctx, 4), 0);
         root.addView(note);
 
@@ -231,7 +231,7 @@ public class SetupWizardFragment extends Fragment {
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        loadingText.setText("Emulator gagal disiapkan: " + e.getMessage());
+                        loadingText.setText("Could not prepare the emulator: " + e.getMessage());
                     }
                 }));
     }
@@ -252,29 +252,29 @@ public class SetupWizardFragment extends Fragment {
         storageStep.card.setVisibility(needsStoragePermission ? View.VISIBLE : View.GONE);
         boolean storageOk = FileUtils.hasDirectStorageAccess();
         if (storageOk) {
-            storageStep.setState(true, "Izin sudah diberikan");
+            storageStep.setState(true, "Access granted");
             // First time with storage access: create Games/N-Gage and use it.
             if (NGageLibrary.getGamesDir(ctx) == null) {
                 useDefaultGamesFolder(false);
             }
         } else {
-            storageStep.setState(false, "Disarankan; tanpa izin ini memakai mode yang lebih lambat");
+            storageStep.setState(false, "Recommended; without it a slower mode is used");
         }
 
         String[] devices = Emulator.getDevices();
         boolean hasDevice = devices != null && devices.length > 0;
         firmwareStep.setState(hasDevice, hasDevice
-                ? "Terpasang: " + TextUtils.join(", ", devices)
-                : "Belum ada firmware");
+                ? "Installed: " + TextUtils.join(", ", devices)
+                : "No firmware yet");
 
         String gamesDir = NGageLibrary.getGamesDir(ctx);
-        gamesStep.setState(gamesDir != null, gamesDir != null ? displayPath(gamesDir) : "Belum dipilih");
+        gamesStep.setState(gamesDir != null, gamesDir != null ? displayPath(gamesDir) : "Not chosen yet");
 
         int done = (storageOk || !needsStoragePermission ? 1 : 0) + (hasDevice ? 1 : 0) + (gamesDir != null ? 1 : 0);
         for (int i = 0; i < progressDots.length; i++) {
             progressDots[i].setBackground(Ui.rounded(ctx, i < done ? Ui.ORANGE : Ui.SURFACE_HI, 0, 3));
         }
-        progressText.setText(done == 3 ? "Siap main" : done + " dari 3 langkah");
+        progressText.setText(done == 3 ? "Ready to play" : done + " of 3 steps");
 
         finishButton.setEnabled(hasDevice && gamesDir != null);
         if (!hasDevice) {
@@ -306,7 +306,7 @@ public class SetupWizardFragment extends Fragment {
         try {
             startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
         } catch (ActivityNotFoundException ignored) {
-            Toast.makeText(getContext(), "Pengaturan izin tidak ditemukan di perangkat ini", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "The permission settings screen was not found on this device", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -405,7 +405,7 @@ public class SetupWizardFragment extends Fragment {
     }
 
     private void installPack(PackJob job) {
-        installPack(job, "Menyalin paket firmware… bisa makan waktu beberapa menit.");
+        installPack(job, "Copying the firmware pack… this can take a few minutes.");
     }
 
     private void installPack(PackJob job, String message) {
@@ -426,14 +426,14 @@ public class SetupWizardFragment extends Fragment {
                     @Override
                     public void onComplete() {
                         dialog.dismiss();
-                        Toast.makeText(app, "Firmware terpasang. Memuat ulang…", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(app, "Firmware installed. Restarting…", Toast.LENGTH_SHORT).show();
                         AppUtils.restart(app);
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
                         dialog.dismiss();
-                        showError("Gagal memasang paket firmware: " + e.getMessage());
+                        showError("Failed to install the firmware pack: " + e.getMessage());
                     }
                 }));
     }
@@ -460,10 +460,10 @@ public class SetupWizardFragment extends Fragment {
                         String where = found.location().getAbsolutePath();
                         if (found.zip != null) {
                             installPack(() -> FirmwarePack.installFromZipFile(found.zip, dataDir()),
-                                    "Firmware ditemukan:\n" + where + "\n\nMemasang otomatis…");
+                                    "Firmware found:\n" + where + "\n\nInstalling automatically…");
                         } else {
                             installPack(() -> FirmwarePack.installFromFolder(found.packRoot, dataDir()),
-                                    "Firmware ditemukan:\n" + where + "\n\nMemasang otomatis…");
+                                    "Firmware found:\n" + where + "\n\nInstalling automatically…");
                         }
                     }
 
@@ -481,8 +481,8 @@ public class SetupWizardFragment extends Fragment {
 
         if (rom != null) {
             if (Emulator.doesRomNeedRPKG(rom) && rpkg == null) {
-                showError("File .ROM ditemukan, tapi firmware ini juga butuh file .RPKG "
-                        + "(isi drive Z: hasil dump). Taruh keduanya di folder yang sama.");
+                showError("Found a .ROM file, but this firmware also needs the .RPKG file "
+                        + "(the dumped Z: drive). Put both in the same folder.");
                 return;
             }
             romPath = rom;
@@ -493,14 +493,14 @@ public class SetupWizardFragment extends Fragment {
             rpkgPath = "";
             installRpkg = false;
         } else {
-            showError("Tidak ada file .ROM atau .VPL di folder itu.");
+            showError("No .ROM or .VPL file in that folder.");
             return;
         }
 
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
-        dialog.setMessage("Memasang firmware… bisa makan waktu beberapa menit.");
+        dialog.setMessage("Installing firmware… this can take a few minutes.");
         dialog.show();
 
         disposables.add(Emulator.subscribeInstallDevice(rpkgPath, romPath, installRpkg, false)
@@ -510,7 +510,7 @@ public class SetupWizardFragment extends Fragment {
                     @Override
                     public void onComplete() {
                         dialog.dismiss();
-                        Toast.makeText(getContext(), "Firmware terpasang", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Firmware installed", Toast.LENGTH_SHORT).show();
                         refresh();
                     }
 
@@ -530,25 +530,25 @@ public class SetupWizardFragment extends Fragment {
     static String describeDeviceError(int code) {
         switch (code) {
             case Emulator.INSTALL_DEVICE_ERROR_NOT_EXIST:
-                return "File firmware tidak bisa dibaca.";
+                return "Cannot read the firmware file.";
             case Emulator.INSTALL_DEVICE_ERROR_INSUFFICENT:
-                return "Ruang penyimpanan tidak cukup.";
+                return "Not enough storage space.";
             case Emulator.INSTALL_DEVICE_ERROR_RPKG_CORRUPT:
-                return "File .RPKG rusak atau bukan dump yang valid.";
+                return "The .RPKG file is corrupted or not a valid dump.";
             case Emulator.INSTALL_DEVICE_ERROR_DETERMINE_PRODUCT_FAIL:
-                return "Jenis perangkat tidak dikenali dari firmware ini.";
+                return "Could not tell the device model from this firmware.";
             case Emulator.INSTALL_DEVICE_ERROR_ALREADY_EXIST:
-                return "Perangkat ini sudah terpasang.";
+                return "This device is already installed.";
             case Emulator.INSTALL_DEVICE_ERROR_ROM_FAIL_TO_COPY:
-                return "Gagal menyalin file .ROM.";
+                return "Failed to copy the .ROM file.";
             case Emulator.INSTALL_DEVICE_ERROR_VPL_FILE_INVALID:
-                return "File .VPL tidak valid.";
+                return "The .VPL file is not valid.";
             case Emulator.INSTALL_DEVICE_ERROR_ROFS_CORRUPTED:
             case Emulator.INSTALL_DEVICE_ERROR_ROM_CORRUPTED:
             case Emulator.INSTALL_DEVICE_ERROR_FPSX_CORRUPTED:
-                return "File firmware rusak.";
+                return "The firmware file is corrupted.";
             default:
-                return "Gagal memasang firmware (kode " + code + ").";
+                return "Failed to install the firmware (code " + code + ").";
         }
     }
 
@@ -558,21 +558,21 @@ public class SetupWizardFragment extends Fragment {
     private void useDefaultGamesFolder(boolean userAsked) {
         if (!FileUtils.hasDirectStorageAccess()) {
             if (userAsked) {
-                showError("Folder default butuh izin akses semua file (langkah 1). "
-                        + "Tanpa izin itu, pakai \"Pilih folder lain\".");
+                showError("The default folder needs access to all files (step 1). "
+                        + "Without it, use \"Choose another folder\".");
             }
             return;
         }
         File dir = NGageLibrary.createDefaultGamesDir();
         if (dir == null) {
             if (userAsked) {
-                showError("Folder Games/N-Gage tidak bisa dibuat di penyimpanan ini.");
+                showError("Cannot create the Games/N-Gage folder on this storage.");
             }
             return;
         }
         NGageLibrary.setGamesDir(requireContext(), dir.getAbsolutePath());
         if (userAsked) {
-            Toast.makeText(getContext(), "Folder siap: " + dir.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Folder ready: " + dir.getAbsolutePath(), Toast.LENGTH_LONG).show();
         }
         refresh();
     }
@@ -616,9 +616,9 @@ public class SetupWizardFragment extends Fragment {
 
     private void showError(String message) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Ada masalah")
+                .setTitle("Something went wrong")
                 .setMessage(message)
-                .setPositiveButton(android.R.string.ok, null)
+                .setPositiveButton("OK", null)
                 .show();
     }
 }

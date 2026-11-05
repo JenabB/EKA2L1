@@ -42,10 +42,10 @@ public final class GameLoadingOverlay {
     private static final int COLOURS_FOR_CONTENT = 6;
 
     private static final String[] TIPS = {
-            "Menyalakan N-Gage virtual…",
-            "Memuat sistem Symbian…",
-            "Menyiapkan game…",
-            "Hampir siap…",
+            "Powering on the virtual handheld…",
+            "Loading Symbian OS…",
+            "Starting the game…",
+            "Almost there…",
     };
 
     private final Activity activity;
@@ -90,7 +90,7 @@ public final class GameLoadingOverlay {
         status.setPadding(0, Ui.dp(activity, 14), 0, 0);
         box.addView(status);
 
-        TextView hint = Ui.muted(activity, "Ketuk untuk menutup layar ini", 11);
+        TextView hint = Ui.muted(activity, "Tap to dismiss", 11);
         hint.setTextColor(0xFF555555);
         hint.setGravity(Gravity.CENTER);
         hint.setPadding(0, Ui.dp(activity, 28), 0, 0);

@@ -29,6 +29,8 @@ android {
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
         }
+        // NGStation is English-only: drop the translations EKA2L1 ships.
+        resourceConfigurations += ["en"]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {

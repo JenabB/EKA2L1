@@ -1,48 +1,47 @@
 # NGStation
 
-Launcher N-Gage ala PPSSPP untuk Android, dibangun di atas core [EKA2L1](https://github.com/EKA2L1/EKA2L1).
-Setup cukup sekali; setelah itu pilih game dan langsung main.
+A PPSSPP-style N-Gage launcher for Android, built on the [EKA2L1](https://github.com/EKA2L1/EKA2L1) core.
+Set it up once, then pick a game and play.
 
-## Yang dibutuhkan
+## What you need
 
-1. **Firmware N-Gage**: hasil dump dari perangkat N-Gage/N-Gage QD milikmu sendiri,
-   berupa file `.ROM` + `.RPKG` (atau `.VPL`). Taruh dalam satu folder.
-   Firmware tidak disertakan karena dilindungi hak cipta.
-2. **Game**: satu folder per game, isinya `System/Apps/...` (hasil dump kartu MMC),
-   atau file `.zip` dari folder itu.
+1. **N-Gage firmware**: a dump from your own N-Gage / N-Gage QD, either an EKA2L1 firmware pack
+   (a `Data` folder or its `.zip`) or `.ROM` + `.RPKG` files (or a `.VPL`). Firmware is not bundled.
+2. **Games**: one folder per game containing `System/Apps/...` (an MMC card dump), or a `.zip` of that folder.
 
-Contoh susunan:
+Example layout:
 
 ```
-Download/NGage/
+Games/N-Gage/
 ├── Firmware/
-│   ├── NGAGE.ROM
-│   └── NGAGE.RPKG
-└── Games/
-    ├── Asphalt Urban GT/
-    │   └── System/Apps/Asphalt/...
-    ├── Pocket Kingdom/
-    │   └── System/Apps/...
-    └── Rayman 3.zip
+│   └── firmware-pack.zip
+├── Asphalt Urban GT/
+│   └── System/Apps/Asphalt/...
+├── Pocket Kingdom/
+│   └── System/Apps/...
+└── Rayman 3.zip
 ```
 
-## Cara pakai
+## Getting started
 
-1. Pasang `NGStation.apk` (dari halaman Releases, tag `ngstation-latest`).
-2. Saat pertama dibuka, ikuti 3 langkah setup: izin akses file → pilih folder firmware → pilih folder game.
-3. Di library, ketuk game. Ketukan pertama memasang game (sekali saja, aplikasi akan memuat ulang sebentar),
-   lalu game langsung berjalan. Ketukan berikutnya langsung main.
-4. Tekan lama sebuah game untuk mengatur kontrol/layar, memasang ulang, atau menghubungkannya ke aplikasi
-   yang sudah terpasang.
+1. Install `NGStation.apk` from the Releases page (tag `ngstation-latest`).
+2. On first launch, allow file access. The app creates `Games/N-Gage` and `Games/N-Gage/Firmware`.
+3. Put the firmware pack in `Games/N-Gage/Firmware` and reopen the app: it installs automatically.
+   You can also choose the firmware yourself in setup.
+4. Copy games into `Games/N-Gage`. In the library, tap a game: the first tap installs it (the app
+   restarts once), later taps start it straight away.
+5. Long-press a game for its settings (controls, screen, upscaling shaders), to reinstall it, or to link it
+   to an installed app.
 
-Menu kanan atas berisi: muat ulang, ganti folder game, firmware/perangkat, pengaturan emulator,
-ulangi setup, dan **Mode EKA2L1 lengkap** (tampilan asli EKA2L1, untuk fitur lanjutan).
+The menu in the top-right has Refresh, Change games folder, Firmware / devices, Emulator settings,
+Run setup again and **Full EKA2L1 mode** (the stock EKA2L1 screens, for advanced options).
 
 ## Build
 
-APK di-build otomatis oleh GitHub Actions (`.github/workflows/ngstation.yml`) setiap push ke branch
-`ngstation`/`master`/`main`. Hasilnya muncul sebagai artifact dan di release `ngstation-latest`.
+The APK is built by GitHub Actions (`.github/workflows/ngstation.yml`) on every push to `ngstation`,
+`master` or `main`. It is uploaded as an artifact and to the `ngstation-latest` release, whose text comes
+from `NGSTATION_RELEASE_NOTES.md`.
 
-Kode launcher ada di `src/emu/android/app/src/main/java/com/github/eka2l1/ngage/`.
-APK ditandatangani dengan `src/emu/android/app/ngstation.jks` (sengaja disimpan di repo, untuk build pribadi),
-supaya setiap build baru bisa langsung menimpa versi lama di HP.
+Launcher code lives in `src/emu/android/app/src/main/java/com/github/eka2l1/ngage/`.
+The APK is signed with `src/emu/android/app/ngstation.jks`, kept in the repository on purpose for personal
+builds so each new build installs over the last one. Use a private key for any store release.

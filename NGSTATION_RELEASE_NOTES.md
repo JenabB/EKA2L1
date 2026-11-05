@@ -1,58 +1,59 @@
 ## NGStation
 
-Launcher N-Gage ala PPSSPP untuk Android: setup sekali, lalu pilih game dan main. Dibangun di atas core [EKA2L1](https://github.com/EKA2L1/EKA2L1); bagian emulasinya tidak diubah.
+A PPSSPP-style N-Gage launcher for Android: set it up once, then pick a game and play. Built on the [EKA2L1](https://github.com/EKA2L1/EKA2L1) core; the emulation itself is unchanged.
 
-**Unduh:** file `NGStation.apk` di bawah. Pasang menimpa versi lama; firmware dan game yang sudah terpasang tetap ada.
+**Download:** `NGStation.apk` below. Install it over the previous version; installed firmware and games are kept.
 
-- Target: Android, game N-Gage generasi pertama (S60v1), format folder atau `.zip`
-- Firmware: disediakan sendiri (dump N-Gage / N-Gage QD), tidak dibundel. Taruh ZIP-nya di `Games/N-Gage/Firmware`, nanti terpasang otomatis
-- Bisa terpasang berdampingan dengan EKA2L1 resmi (app id `com.github.eka2l1.ngstation`)
+- Target: Android, first-generation N-Gage games (S60v1), as folders or `.zip`
+- Firmware: bring your own dump (N-Gage / N-Gage QD); none is bundled. Put the firmware pack ZIP in `Games/N-Gage/Firmware` and it installs automatically
+- Installs side by side with the official EKA2L1 (app id `com.github.eka2l1.ngstation`)
 
-## Riwayat rilis
+## Release history
 
-Terbaru di atas.
+Newest first.
 
-### Build 7 — Tampilan gaya N-Gage QD (5 November 2026)
-- **Baru:** layar setup didesain ulang dengan palet QD: bodi arang, tombol utama oranye, tombol kedua silver, nomor langkah seperti tombol tengah QD (hitam dengan angka oranye), gambar perangkat di atas, dan indikator kemajuan 3 langkah
-- **Baru:** langkah yang sudah selesai otomatis terlipat menjadi satu baris status, dengan tombol "Ubah" untuk membukanya lagi
-- **Perbaikan:** tema bawaan EKA2L1 (bilah ungu, dialog putih) diganti tema gelap dengan aksen oranye di seluruh aplikasi
-- **Perbaikan:** dialog peringatan penyimpanan bawaan EKA2L1 tidak muncul lagi; penjelasannya dipindah ke layar setup
-- Library dan layar loading ikut memakai palet arang–oranye
+### Build 8 — English UI (5 November 2026)
+- **Changed:** the whole app is now in English, whatever language the phone uses (launcher screens, stock EKA2L1 screens and system buttons)
 
-### Build 6 — Ikon aplikasi (4 November 2026)
-- **Baru:** ikon aplikasi baru (perangkat genggam bergaya sederhana), pas di semua bentuk ikon launcher, plus ikon Play Store 512×512
+### Build 7 — N-Gage QD look (5 November 2026)
+- **New:** setup redesigned in the QD palette: charcoal body, orange primary and silver secondary buttons, step badges like the QD's black centre keys, the handheld artwork on top and a 3-step progress bar
+- **New:** finished steps fold into a one-line status, with "Edit" to reopen them
+- **Fixed:** the stock EKA2L1 theme (purple bar, white dialogs) is replaced by a dark theme with orange accents across the app
+- **Fixed:** the stock EKA2L1 storage warning dialog no longer appears; setup explains where data lives instead
+- Library and loading screen use the same charcoal and orange palette
 
-Build 1–5 dirilis pada 3 November 2026.
+### Build 6 — App icon (4 November 2026)
+- **New:** new app icon (a simplified handheld) that fits every launcher icon shape, plus a 512×512 Play Store icon
 
-### Build 5 — Layout N-Gage QD (`52aa60e`)
-- **Baru:** layout tombol gaya N-Gage QD. D-pad berbentuk salib dengan titik oranye di cekungan bulat (bagian yang ditekan menyala oranye), keypad melengkung di panel arang, soft-L dan tombol panggil di bawah D-pad, soft-R di atas keypad, tombol tutup di kanan bawah
-- **Baru:** warna tombol ala QD. Tulisan oranye, kolom tengah (2/5/8/0) hitam, angka lain silver, tombol fungsi arang, oranye saat ditekan
-- **Baru:** bodi abu-abu di sekitar layar game, dengan bingkai hitam
-- **Perbaikan:** tombol selalu tampil transparan karena keyboard menganggap seluruh layar adalah layar game; posisi layar game kini dihitung dengan rumus yang sama dengan core
+### Build 5 — N-Gage QD layout (3 November 2026)
+- **New:** QD-style on-screen controls: a cross pad with orange dots in a recessed disc (pressed parts glow orange), the keypad fanned along an arc on a charcoal plate, soft-left and call under the pad, soft-right above the keypad, end key bottom right
+- **New:** QD key colours: orange legends, black centre column (2/5/8/0), silver for the other digits, charcoal function keys, orange when pressed
+- **New:** grey body around the game screen, with a black bezel
+- **Fixed:** keys were always drawn translucent because the keyboard treated the whole screen as the game screen; the game area is now worked out with the same maths as the core
 
-### Build 4 — Firmware otomatis (`b528239`)
-- **Perbaikan:** aplikasi tertutup sendiri setelah memasang firmware; kini file hanya disalin lalu aplikasi memuat ulang dengan rapi
-- **Baru:** firmware dipasang otomatis. ZIP atau folder paket firmware di `Games/N-Gage/Firmware`, `Games/N-Gage`, atau `Download` dikenali tanpa perlu dipilih
-- **Baru:** folder `Games/N-Gage/Firmware` dibuat bersama folder game; ZIP firmware tidak ikut tampil sebagai game
-- **Perbaikan:** folder `roms/<kode>` disalin dengan huruf kecil, sesuai yang dicari core
+### Build 4 — Automatic firmware (3 November 2026)
+- **Fixed:** the app closed itself after installing firmware; it now only copies the files and restarts cleanly
+- **New:** automatic firmware install: a firmware pack ZIP or folder in `Games/N-Gage/Firmware`, `Games/N-Gage` or `Download` is picked up without asking
+- **New:** `Games/N-Gage/Firmware` is created with the games folder; firmware ZIPs are not listed as games
+- **Fixed:** `roms/<code>` is copied in lower case, as the core expects
 
-### Build 3 — Tema N-Gage, loading, landscape (`976b079`, `95aaf0d`)
-- **Baru:** tema hitam–merah–putih untuk setup dan library
-- **Baru:** folder `Games/N-Gage` (berisi `BACA SAYA.txt`) dibuat otomatis begitu izin akses file diberikan, dan dipakai sebagai folder game default
-- **Baru:** layar loading saat game dimuat; hilang sendiri begitu gambar game muncul, bisa diketuk untuk ditutup
-- **Baru:** default per game landscape, layar game di tengah, layout tombol "N-Gage" yang menjauhi sudut layar yang membulat
+### Build 3 — Theme, loading screen, landscape (3 November 2026)
+- **New:** themed setup and library screens
+- **New:** `Games/N-Gage` (with a README) is created once file access is granted and used as the default games folder
+- **New:** loading screen while a game starts; it goes away when the game draws its first frame, or on tap
+- **New:** per-game defaults: landscape, game screen centred, an on-screen layout that keeps clear of rounded screen corners
 
-### Build 2 — Paket firmware (`9a0e464`)
-- **Perbaikan:** aplikasi langsung tertutup saat pertama dibuka; layar setup kini menunggu core emulator siap
-- **Baru:** paket firmware EKA2L1 (folder `Data` berisi `devices.yml`, `drives`, `roms`) bisa dipasang dari folder atau `.zip`, digabung tanpa menghapus perangkat lama
+### Build 2 — Firmware packs (3 November 2026)
+- **Fixed:** the app closed right away on first launch; setup now waits for the emulator core
+- **New:** EKA2L1 firmware packs (a `Data` folder with `devices.yml`, `drives`, `roms`) install from a folder or a `.zip`, merged without removing existing devices
 
-### Build 1 — Rilis pertama (`eb645fd`)
-- **Baru:** wizard setup 3 langkah: izin akses file, firmware dari satu folder (`.ROM`/`.RPKG`/`.VPL` dikenali otomatis), folder game
-- **Baru:** library ala PPSSPP. Tiap folder game (`System/Apps`) atau `.zip` jadi satu kotak; ketukan pertama memasang game, berikutnya langsung main
-- **Baru:** perangkat N-Gage dipilih otomatis; tekan lama game untuk pengaturan, pasang ulang, atau menghubungkan ke aplikasi terpasang
-- **Baru:** build APK otomatis lewat GitHub Actions, dengan rilis `ngstation-latest`
+### Build 1 — First release (3 November 2026)
+- **New:** 3-step setup: file access, firmware from one folder (`.ROM`/`.RPKG`/`.VPL` detected automatically), games folder
+- **New:** PPSSPP-style library: every game folder (`System/Apps`) or `.zip` is a tile; the first tap installs the game, later taps start it
+- **New:** the N-Gage device is selected automatically; long-press a game for settings, reinstall, or linking it to an installed app
+- **New:** APK built automatically with GitHub Actions, published on the `ngstation-latest` release
 
-## Batasan
-- **Save state / load state:** belum ada; core EKA2L1 belum mendukungnya
-- **Upscaling:** tersedia lewat shader per game (xBR, 4xHQ, LCD, CRT, dan lainnya) di Pengaturan game; berupa filter, bukan render ulang di resolusi tinggi
-- **Layout tersimpan:** game yang layout atau pengaturannya pernah disimpan tetap memakai yang lama; pilih layout "N-Gage" di editor layout tombol
+## Known limitations
+- **Save states:** not available yet; the EKA2L1 core does not support them
+- **Upscaling:** available as per-game shaders (xBR, 4xHQ, LCD, CRT and more) in Game settings; these are filters, not higher-resolution rendering
+- **Saved layouts:** games whose layout or settings were saved before keep them; pick the "N-Gage" layout in the on-screen layout editor

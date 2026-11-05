@@ -86,16 +86,16 @@ public final class NGageLibrary {
             return null;
         }
         new File(dir, "Firmware").mkdirs();
-        File note = new File(dir, "BACA SAYA.txt");
+        File note = new File(dir, "README.txt");
         if (!note.exists()) {
-            String text = "NGStation - folder game N-Gage\n\n"
-                    + "Taruh tiap game di sini sebagai satu folder (isinya System/Apps/...)\n"
-                    + "atau sebagai file .zip. Contoh:\n\n"
+            String text = "NGStation - N-Gage games folder\n\n"
+                    + "Put each game here as its own folder (containing System/Apps/...)\n"
+                    + "or as a .zip file. For example:\n\n"
                     + "  Games/N-Gage/Asphalt Urban GT/System/Apps/Asphalt/...\n"
                     + "  Games/N-Gage/Rayman 3.zip\n\n"
-                    + "Lalu buka NGStation; game langsung muncul di library.\n\n"
-                    + "Firmware: taruh file .zip paket firmware di folder Firmware/\n"
-                    + "sebelum setup, nanti dipasang otomatis.\n";
+                    + "Then open NGStation; the games show up in the library.\n\n"
+                    + "Firmware: put the firmware pack .zip in the Firmware/ folder\n"
+                    + "before setup and it installs automatically.\n";
             try (java.io.Writer w = new java.io.OutputStreamWriter(
                     new java.io.FileOutputStream(note), java.nio.charset.StandardCharsets.UTF_8)) {
                 w.write(text);

@@ -88,6 +88,12 @@ import java.util.Objects;
 import java.util.concurrent.Semaphore;
 
 public class EmulatorActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        // NGStation: English-only app.
+        super.attachBaseContext(com.github.eka2l1.ngage.AppLocale.wrap(newBase));
+    }
     private static final int ORIENTATION_DEFAULT = 0;
     private static final int ORIENTATION_AUTO = 1;
     private static final int ORIENTATION_PORTRAIT = 2;

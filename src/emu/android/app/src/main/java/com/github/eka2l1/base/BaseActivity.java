@@ -34,6 +34,12 @@ import static com.github.eka2l1.emu.Constants.PREF_THEME;
 public class BaseActivity extends AppCompatActivity {
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        // NGStation: English-only app.
+        super.attachBaseContext(com.github.eka2l1.ngage.AppLocale.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         AppDataStore dataStore = AppDataStore.getAndroidStore();
         String theme = dataStore.getString(PREF_THEME, "dark");

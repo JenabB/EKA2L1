@@ -68,7 +68,7 @@ jobs:
     - name: Compose release notes
       run: |
         {
-          echo "> Build otomatis dari commit \`$(git rev-parse --short HEAD)\`."
+          echo "> Automatic build from commit \`$(git rev-parse --short HEAD)\`."
           echo
           cat "${GITHUB_WORKSPACE}/NGSTATION_RELEASE_NOTES.md"
         } > "${GITHUB_WORKSPACE}/release-body.md"
@@ -79,7 +79,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ngstation-latest
-        name: NGStation (build terbaru)
+        name: NGStation (latest build)
         prerelease: true
         files: NGStation.apk
         body_path: release-body.md

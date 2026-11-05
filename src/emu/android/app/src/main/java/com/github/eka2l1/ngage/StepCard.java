@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 /**
  * One setup step: a badge, a title and a one-line status. While the step is open its
- * explanation and buttons show; once done it folds to the status line, with "Ubah"
+ * explanation and buttons show; once done it folds to the status line, with "Edit"
  * to open it again.
  */
 final class StepCard {
@@ -46,7 +46,7 @@ final class StepCard {
         titles.addView(status);
         header.addView(titles, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        toggle = Ui.textButton(ctx, "Ubah");
+        toggle = Ui.textButton(ctx, "Edit");
         toggle.setVisibility(View.GONE);
         toggle.setOnClickListener(v -> {
             userOpened = !userOpened;
@@ -83,7 +83,7 @@ final class StepCard {
         boolean open = !done || userOpened;
         body.setVisibility(open ? View.VISIBLE : View.GONE);
         toggle.setVisibility(done ? View.VISIBLE : View.GONE);
-        toggle.setText(userOpened ? "Tutup" : "Ubah");
+        toggle.setText(userOpened ? "Close" : "Edit");
     }
 
     boolean isDone() {

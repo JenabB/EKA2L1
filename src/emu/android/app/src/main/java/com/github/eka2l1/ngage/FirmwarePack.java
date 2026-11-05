@@ -181,11 +181,11 @@ final class FirmwarePack {
     /** Merges the pack at {@code packRoot} into {@code dataDir}. */
     static void installFromFolder(File packRoot, File dataDir) throws IOException {
         if (!dataDir.isDirectory() && !dataDir.mkdirs()) {
-            throw new IOException("Tidak bisa membuat folder " + dataDir);
+            throw new IOException("Cannot create folder " + dataDir);
         }
         File[] children = packRoot.listFiles();
         if (children == null) {
-            throw new IOException("Folder firmware tidak bisa dibaca");
+            throw new IOException("Cannot read the firmware folder");
         }
         for (File child : children) {
             if (child.isFile() && child.getName().equalsIgnoreCase(DEVICES_FILE)) {
@@ -222,7 +222,7 @@ final class FirmwarePack {
     static void installFromZip(Context context, Uri zipUri, File dataDir) throws IOException {
         InputStream input = context.getContentResolver().openInputStream(zipUri);
         if (input == null) {
-            throw new IOException("File ZIP tidak bisa dibuka");
+            throw new IOException("Cannot open the ZIP file");
         }
         installFromZipStream(input, dataDir);
     }
@@ -238,7 +238,7 @@ final class FirmwarePack {
             unzip(input, staging);
             File root = findPackRootBelow(staging);
             if (root == null) {
-                throw new IOException("ZIP ini bukan paket firmware EKA2L1 (tidak ada devices.yml + drives).");
+                throw new IOException("This ZIP is not an EKA2L1 firmware pack (no devices.yml + drives).");
             }
             installFromFolder(root, dataDir);
         } finally {
@@ -286,7 +286,7 @@ final class FirmwarePack {
     private static void copyRecursive(File src, File dst) throws IOException {
         if (src.isDirectory()) {
             if (!dst.isDirectory() && !dst.mkdirs()) {
-                throw new IOException("Tidak bisa membuat folder " + dst);
+                throw new IOException("Cannot create folder " + dst);
             }
             File[] children = src.listFiles();
             if (children == null) {
@@ -305,7 +305,7 @@ final class FirmwarePack {
     private static void copyDocumentRecursive(Context context, DocumentFile src, File dst) throws IOException {
         if (src.isDirectory()) {
             if (!dst.isDirectory() && !dst.mkdirs()) {
-                throw new IOException("Tidak bisa membuat folder " + dst);
+                throw new IOException("Cannot create folder " + dst);
             }
             for (DocumentFile child : src.listFiles()) {
                 String name = child.getName();
@@ -317,7 +317,7 @@ final class FirmwarePack {
         } else {
             InputStream in = context.getContentResolver().openInputStream(src.getUri());
             if (in == null) {
-                throw new IOException("Tidak bisa membaca " + src.getName());
+                throw new IOException("Cannot read " + src.getName());
             }
             try (InputStream input = in; OutputStream out = new FileOutputStream(dst)) {
                 copy(input, out);
@@ -333,17 +333,17 @@ final class FirmwarePack {
                 File file = new File(target, entry.getName());
                 // Refuse entries that would land outside the staging folder.
                 if (!file.getCanonicalPath().startsWith(targetPath)) {
-                    throw new IOException("Isi ZIP tidak valid: " + entry.getName());
+                    throw new IOException("Invalid ZIP entry: " + entry.getName());
                 }
                 if (entry.isDirectory()) {
                     if (!file.isDirectory() && !file.mkdirs()) {
-                        throw new IOException("Tidak bisa membuat folder " + file);
+                        throw new IOException("Cannot create folder " + file);
                     }
                     continue;
                 }
                 File parent = file.getParentFile();
                 if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
-                    throw new IOException("Tidak bisa membuat folder " + parent);
+                    throw new IOException("Cannot create folder " + parent);
                 }
                 try (OutputStream out = new FileOutputStream(file)) {
                     copy(zis, out);
