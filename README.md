@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.png" alt="NGStation: play N-Gage games on Android" width="100%">
+  <img src="ngstation-assets/readme/banner.png" alt="NGStation: play N-Gage games on Android" width="100%">
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@ Everything EKA2L1 can run, NGStation runs the same way: the emulation core is un
 
 | Setup | Library | On-screen controls |
 |:---:|:---:|:---:|
-| <img src="docs/images/setup.png" width="260"> | <img src="docs/images/library.png" width="260"> | <img src="docs/images/controls.png" width="420"> |
+| <img src="ngstation-assets/readme/setup.png" width="260"> | <img src="ngstation-assets/readme/library.png" width="260"> | <img src="ngstation-assets/readme/controls.png" width="420"> |
 
 <sub>Images are renders of the current design.</sub>
 
