@@ -105,6 +105,16 @@ public final class NGageLibrary {
         return dir;
     }
 
+    private static final String KEY_PLAYED_PREFIX = "played:";
+
+    public static long getLastPlayed(Context context, String gamePath) {
+        return prefs(context).getLong(KEY_PLAYED_PREFIX + gamePath, 0);
+    }
+
+    public static void setLastPlayed(Context context, String gamePath, long when) {
+        prefs(context).edit().putLong(KEY_PLAYED_PREFIX + gamePath, when).apply();
+    }
+
     // ------------------------------------------------------------ pending launch
 
     /** Remembers the game to launch once the process has restarted after install. */

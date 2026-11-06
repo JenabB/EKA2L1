@@ -91,6 +91,10 @@ public class LibraryFragment extends Fragment {
     private final List<AppItem> installedApps = new ArrayList<>();
     private GameAdapter adapter;
     private TextView headerText;
+    private LinearLayout continueCard;
+    private GameCoverView continueCover;
+    private TextView continueTitle;
+    private NGageGame continueGame;
     private LinearLayout emptyView;
     private TextView emptyText;
     private GridView grid;
@@ -111,22 +115,62 @@ public class LibraryFragment extends Fragment {
 
         LinearLayout root = Ui.column(ctx);
         int pad = Ui.dp(ctx, 12);
-        root.setPadding(pad, pad, pad, 0);
+        root.setPadding(Ui.dp(ctx, 16), pad, Ui.dp(ctx, 16), 0);
 
         TextView brand = Ui.text(ctx, Ui.brand(), 24, true);
         brand.setLetterSpacing(0.12f);
         brand.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 4), 0, 0);
         root.addView(brand);
-        headerText = Ui.muted(ctx, "", 12);
-        headerText.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 2), 0, Ui.dp(ctx, 12));
+        headerText = Ui.muted(ctx, "", 13);
+        headerText.setPadding(Ui.dp(ctx, 4), Ui.dp(ctx, 2), 0, Ui.dp(ctx, 14));
         root.addView(headerText);
+
+        // "Continue playing": the last game played, one tap away.
+        continueCard = Ui.row(ctx);
+        continueCard.setBackground(Ui.rounded(ctx, Ui.SURFACE, Ui.BORDER, 18));
+        int cpad = Ui.dp(ctx, 12);
+        continueCard.setPadding(cpad, cpad, cpad, cpad);
+        continueCover = new GameCoverView(ctx);
+        continueCard.addView(continueCover, new LinearLayout.LayoutParams(Ui.dp(ctx, 56), LinearLayout.LayoutParams.WRAP_CONTENT));
+        LinearLayout continueText = Ui.column(ctx);
+        continueText.setPadding(Ui.dp(ctx, 14), 0, Ui.dp(ctx, 8), 0);
+        TextView continueLabel = Ui.text(ctx, "CONTINUE PLAYING", 11, true);
+        continueLabel.setTextColor(Ui.ORANGE);
+        continueLabel.setLetterSpacing(0.12f);
+        continueText.addView(continueLabel);
+        continueTitle = Ui.text(ctx, "", 17, true);
+        continueTitle.setMaxLines(2);
+        continueTitle.setEllipsize(TextUtils.TruncateAt.END);
+        continueText.addView(continueTitle);
+        continueCard.addView(continueText, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        TextView playButton = Ui.text(ctx, "▶", 18, true);
+        playButton.setGravity(Gravity.CENTER);
+        playButton.setBackground(Ui.circle(Ui.ORANGE));
+        int pb = Ui.dp(ctx, 46);
+        continueCard.addView(playButton, new LinearLayout.LayoutParams(pb, pb));
+        continueCard.setOnClickListener(v -> {
+            if (continueGame != null) {
+                onGameClicked(continueGame);
+            }
+        });
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        clp.bottomMargin = Ui.dp(ctx, 18);
+        continueCard.setVisibility(View.GONE);
+        root.addView(continueCard, clp);
+
+        TextView allLabel = Ui.text(ctx, "ALL GAMES", 11, true);
+        allLabel.setTextColor(Ui.MUTED);
+        allLabel.setLetterSpacing(0.12f);
+        allLabel.setPadding(Ui.dp(ctx, 4), 0, 0, Ui.dp(ctx, 10));
+        root.addView(allLabel);
 
         grid = new GridView(ctx);
         grid.setNumColumns(GridView.AUTO_FIT);
-        grid.setColumnWidth(Ui.dp(ctx, 112));
+        grid.setColumnWidth(Ui.dp(ctx, 150));
         grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
-        grid.setVerticalSpacing(Ui.dp(ctx, 10));
-        grid.setHorizontalSpacing(Ui.dp(ctx, 10));
+        grid.setVerticalSpacing(Ui.dp(ctx, 18));
+        grid.setHorizontalSpacing(Ui.dp(ctx, 14));
         grid.setClipToPadding(false);
         grid.setPadding(0, 0, 0, Ui.dp(ctx, 24));
         adapter = new GameAdapter();
@@ -196,7 +240,6 @@ public class LibraryFragment extends Fragment {
             }
         }
         String dir = NGageLibrary.getGamesDir(app);
-        headerText.setText(dir == null ? "" : "Folder: " + SetupWizardFragment.displayPath(dir));
 
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
@@ -223,7 +266,9 @@ public class LibraryFragment extends Fragment {
                         installedApps.addAll(result.apps);
                         games.clear();
                         games.addAll(result.games);
+                        sortGames();
                         adapter.notifyDataSetChanged();
+                        updateHeader();
                         updateEmptyState(dir);
                         if (!ensureNGageDevice()) {
                             return;
@@ -237,6 +282,40 @@ public class LibraryFragment extends Fragment {
                         onCoreUnavailable();
                     }
                 }));
+    }
+
+    /** Recently played first, then by name. */
+    private void sortGames() {
+        Context ctx = requireContext();
+        for (NGageGame g : games) {
+            g.lastPlayed = NGageLibrary.getLastPlayed(ctx, g.path);
+        }
+        java.util.Collections.sort(games, (a, b) -> {
+            if (a.lastPlayed != b.lastPlayed) {
+                return Long.compare(b.lastPlayed, a.lastPlayed);
+            }
+            return a.displayTitle.compareToIgnoreCase(b.displayTitle);
+        });
+    }
+
+    private void updateHeader() {
+        int installed = 0;
+        for (NGageGame g : games) {
+            if (g.isInstalled()) {
+                installed++;
+            }
+        }
+        headerText.setText(games.size() + (games.size() == 1 ? " game" : " games")
+                + " · " + installed + " installed");
+        continueGame = (!games.isEmpty() && games.get(0).lastPlayed > 0 && games.get(0).isInstalled())
+                ? games.get(0) : null;
+        if (continueGame != null) {
+            continueCover.bind(continueGame.displayTitle, continueGame.icon, true);
+            continueTitle.setText(continueGame.displayTitle);
+            continueCard.setVisibility(View.VISIBLE);
+        } else {
+            continueCard.setVisibility(View.GONE);
+        }
     }
 
     /** Fills in uid and icon for every game that is already installed. */
@@ -348,8 +427,9 @@ public class LibraryFragment extends Fragment {
     // ------------------------------------------------------------------ launch
 
     private void onGameClicked(NGageGame game) {
+        NGageLibrary.setLastPlayed(requireContext(), game.path, System.currentTimeMillis());
         if (game.isInstalled()) {
-            launch(game.uid, game.title);
+            launch(game.uid, game.displayTitle);
         } else {
             install(game);
         }
@@ -371,7 +451,7 @@ public class LibraryFragment extends Fragment {
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setIndeterminate(true);
         dialog.setCancelable(false);
-        dialog.setMessage("Installing " + game.title + "…\nOnly needed once; next time it starts straight away.");
+        dialog.setMessage("Installing " + game.displayTitle + "…\nOnly needed once; next time it starts straight away.");
         dialog.show();
 
         Context app = requireContext().getApplicationContext();
@@ -423,7 +503,7 @@ public class LibraryFragment extends Fragment {
         AppItem match = NGageLibrary.matchInstalledApp(game, installedApps, before);
         if (match != null) {
             bind(game, match);
-            launch(match.getUid(), game.title);
+            launch(match.getUid(), game.displayTitle);
         } else {
             askWhichApp(game, true);
         }
@@ -448,12 +528,12 @@ public class LibraryFragment extends Fragment {
             labels[i] = installedApps.get(i).getTitle();
         }
         new AlertDialog.Builder(requireContext())
-                .setTitle("Which app is \"" + game.title + "\"?")
+                .setTitle("Which app is \"" + game.displayTitle + "\"?")
                 .setItems(labels, (d, which) -> {
                     AppItem item = installedApps.get(which);
                     bind(game, item);
                     if (launchAfter) {
-                        launch(item.getUid(), game.title);
+                        launch(item.getUid(), game.displayTitle);
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -486,7 +566,7 @@ public class LibraryFragment extends Fragment {
         }
         int position = ((AdapterView.AdapterContextMenuInfo) menuInfo).position;
         contextGame = games.get(position);
-        menu.setHeaderTitle(contextGame.title);
+        menu.setHeaderTitle(contextGame.displayTitle);
         if (contextGame.isInstalled()) {
             menu.add(Menu.NONE, CTX_SETTINGS, 0, "Game settings (controls, screen)");
         }
@@ -505,7 +585,7 @@ public class LibraryFragment extends Fragment {
                 ConfigFragment configFragment = new ConfigFragment();
                 Bundle args = new Bundle();
                 args.putLong(KEY_APP_UID, game.uid);
-                args.putString(KEY_APP_NAME, game.title);
+                args.putString(KEY_APP_NAME, game.displayTitle);
                 args.putString(KEY_ACTION, ACTION_EDIT);
                 configFragment.setArguments(args);
                 openFragment(configFragment);
@@ -637,29 +717,19 @@ public class LibraryFragment extends Fragment {
             Holder holder;
             if (convertView == null) {
                 LinearLayout tile = Ui.column(ctx);
-                tile.setGravity(Gravity.CENTER_HORIZONTAL);
-                int pad = Ui.dp(ctx, 10);
-                tile.setPadding(pad, pad, pad, pad);
-                android.graphics.drawable.StateListDrawable bg = new android.graphics.drawable.StateListDrawable();
-                bg.addState(new int[]{android.R.attr.state_pressed}, Ui.rounded(ctx, 0xFF3A2A20, Ui.ORANGE, 14));
-                bg.addState(new int[]{}, Ui.rounded(ctx, Ui.SURFACE, Ui.BORDER, 14));
-                tile.setBackground(bg);
-
                 holder = new Holder();
-                holder.icon = new ImageView(ctx);
-                holder.icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                int size = Ui.dp(ctx, 64);
-                tile.addView(holder.icon, new LinearLayout.LayoutParams(size, size));
+                holder.cover = new GameCoverView(ctx);
+                tile.addView(holder.cover, new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-                holder.title = Ui.text(ctx, "", 13, true);
-                holder.title.setGravity(Gravity.CENTER);
+                holder.title = Ui.text(ctx, "", 14, true);
                 holder.title.setMaxLines(2);
                 holder.title.setEllipsize(TextUtils.TruncateAt.END);
-                holder.title.setPadding(0, Ui.dp(ctx, 6), 0, 0);
+                holder.title.setPadding(Ui.dp(ctx, 2), Ui.dp(ctx, 8), Ui.dp(ctx, 2), 0);
                 tile.addView(holder.title);
 
-                holder.status = Ui.text(ctx, "", 11, false);
-                holder.status.setGravity(Gravity.CENTER);
+                holder.status = Ui.muted(ctx, "", 12);
+                holder.status.setPadding(Ui.dp(ctx, 2), Ui.dp(ctx, 2), Ui.dp(ctx, 2), 0);
                 tile.addView(holder.status);
 
                 tile.setTag(holder);
@@ -669,25 +739,17 @@ public class LibraryFragment extends Fragment {
             }
 
             NGageGame game = games.get(position);
-            holder.title.setText(game.title);
-            if (game.icon != null) {
-                holder.icon.setImageBitmap(game.icon);
-            } else {
-                holder.icon.setImageResource(R.mipmap.ic_ducky_foreground);
-            }
-            if (game.isInstalled()) {
-                holder.status.setText("▶ Ready to play");
-                holder.status.setTextColor(Ui.SILVER);
-            } else {
-                holder.status.setText(game.archive ? "ZIP · tap to install" : "Tap to install");
-                holder.status.setTextColor(Ui.ORANGE);
-            }
+            holder.cover.bind(game.displayTitle, game.icon, game.isInstalled());
+            holder.title.setText(game.displayTitle);
+            String state = game.isInstalled() ? "Ready to play" : "Tap to install";
+            holder.status.setText(game.region != null ? game.region + "  ·  " + state : state);
+            holder.status.setTextColor(game.isInstalled() ? Ui.SILVER : Ui.MUTED);
             return convertView;
         }
     }
 
     private static final class Holder {
-        ImageView icon;
+        GameCoverView cover;
         TextView title;
         TextView status;
     }

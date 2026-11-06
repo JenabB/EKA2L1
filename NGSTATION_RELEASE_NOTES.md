@@ -12,6 +12,12 @@ A PPSSPP-style N-Gage launcher for Android: set it up once, then pick a game and
 
 Newest first.
 
+### Build 9 — New library, smaller app (6 November 2026)
+- **New:** library redesign: games appear as game cards (cut-corner card shape, a colour per game, the game's icon once installed or its initials before), two per row, with a play or install badge
+- **New:** "Continue playing" card for the last game played; recently played games sort first
+- **New:** clean titles without dump tags ("Asphalt Urban GT (USA, Europe) (En,Fr,De)" shows as "Asphalt Urban GT", region shown separately), and a game and install count in the header
+- **Changed:** smaller download: unused ML Kit barcode scanning and CameraX video/view/extensions modules removed, scripting debug guides no longer bundled, lighter header image
+
 ### Build 8 — English UI (5 November 2026)
 - **Changed:** the whole app is now in English, whatever language the phone uses (launcher screens, stock EKA2L1 screens and system buttons)
 
